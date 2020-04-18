@@ -1,3 +1,12 @@
+"""
+
+TODO: Ajout du pathfinding
+TODO: Ajout du mécanisme berserk
+TODO: Ajout de la commande 'suis moi tout près'
+TODO: Ajout de la commande 'suis moi à moyenne distance'
+TODO: Ajout de la commande 'arrête de me suivre'
+
+"""
 
 
 import arcade, pathlib
@@ -130,16 +139,20 @@ class Game(arcade.Window):
 
 		arcade.start_render()
 
-		self.exclamations = arcade.SpriteList()
-
 		for e in (self.engine.brother, self.engine.sister):
 
-			if e.is_out_leveled:
+			if e.is_out_leveled and e.associated_exclamation is None:
 
 				s = arcade.Sprite(str(EXCLAMATION_SPRITE_PATH), EXCLAMATION_SCALING)
 				s.center_x = e.x
 				s.center_y = e.y
 				self.exclamations.append(s)
+				e.associated_exclamation = s
+
+			elif not e.is_out_leveled and e.associated_exclamation is not None:
+
+				e.associated_exclamation.remove_from_sprite_lists()
+				e.associated_exclamation = None
 
 		self.walls.draw()
 		self.weapons.draw()

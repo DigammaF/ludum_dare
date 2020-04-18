@@ -26,6 +26,8 @@ class MainEntity:
 		self.level = level # 0-1
 		self.has_weapon = has_weapon
 
+		self.associated_exclamation = None
+
 	@staticmethod
 	def new(x, y):
 		return MainEntity(

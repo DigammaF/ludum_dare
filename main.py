@@ -18,7 +18,7 @@ from engine import BROTHER_SPEED, SISTER_SPEED
 
 
 FOG_OF_WAR_REFRESH_TTL = 10
-FOG_OF_WAR_ENABLED = False
+FOG_OF_WAR_ENABLED = True
 
 
 SCREEN_WIDTH = 1000
@@ -162,6 +162,9 @@ class Game(arcade.Window):
 		self.keyboard[symbol] = True
 
 		if symbol == Controls.SWITCH_CONTROL:
+
+			if self.current_order == Game.ORDER_COME_HERE:
+
 			self.controlled.stop_commands()
 			self.controlled = [self.engine.brother, self.engine.sister][self.controlled is self.engine.brother]
 

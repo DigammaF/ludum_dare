@@ -14,6 +14,9 @@ import arcade, pathlib
 import engine
 
 
+FOG_OF_WAR_REFRESH_TTL = 100
+
+
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 650
 SCREEN_TITLE = "Test"
@@ -27,6 +30,7 @@ SISTER_SCALING = 1
 WALL_SCALING = 1
 WEAPON_SCALING = 1
 EXCLAMATION_SCALING = 1
+GROUND_SCALING = 1
 
 
 BROTHER_SPEED = 200
@@ -42,6 +46,10 @@ WEAPON_SPRITE_PATH = ASSETS_PATH / "weapon.png"
 EXCLAMATION_SPRITE_PATH = ASSETS_PATH / "exclamation.png"
 
 DEBUG_MAP_PATH = ASSETS_PATH / "debug_map.tmx"
+
+
+INVISIBLE = 0
+VISIBLE = 255
 
 
 class Controls:
@@ -78,9 +86,12 @@ class Game(arcade.Window):
 		self.walls = None
 		self.weapons = None
 		self.exclamations = None
+		self.grounds = None
+
 		self.fog_of_war = None
 
 		self.sight_blocks = []
+		self.every_sprites = []
 
 		self.brother = None
 		self.sister = None
@@ -95,10 +106,12 @@ class Game(arcade.Window):
 
 		self.controlled = None
 
-		arcade.set_background_color(arcade.csscolor.CORNFLOWER_BLUE)
+		arcade.set_background_color(arcade.csscolor.BLACK)
 
 		self.mouse_x = 0
 		self.mouse_y = 0
+
+		self.fog_of_war_refresh_ttl = 0
 
 	def can_see(self, x, y, dest_x, dest_y):
 
@@ -118,6 +131,14 @@ class Game(arcade.Window):
 		collider = colliders[0]
 
 		return arcade.is_point_in_polygon(dest_x, dest_y, collider.points)
+
+	def can_see_sprite(self, x, y, sprite):
+
+		for point in sprite.points:
+			if self.can_see(x, y, *point):
+				return True
+
+		return False
 
 	def on_key_press(self, symbol: int, modifiers: int):
 
@@ -148,8 +169,12 @@ class Game(arcade.Window):
 		map = arcade.tilemap.read_tmx(str(DEBUG_MAP_PATH))
 		self.walls = arcade.tilemap.process_layer(map, "walls", WALL_SCALING)
 		self.weapons = arcade.tilemap.process_layer(map, "weapons", WEAPON_SCALING)
+		self.grounds = arcade.tilemap.process_layer(map, "ground", GROUND_SCALING)
 
 		self.sight_blocks = self.walls[:]
+		self.every_sprites = self.walls[:]
+		self.every_sprites += self.weapons
+		self.every_sprites += self.grounds
 
 		self.brother = arcade.Sprite(str(BROTHER_SPRITE_PATH), BROTHER_SCALING)
 		self.brother.center_x = SCREEN_WIDTH/2
@@ -160,6 +185,9 @@ class Game(arcade.Window):
 		self.sister.center_x = SCREEN_WIDTH/2
 		self.sister.center_y = SCREEN_HEIGHT/2
 		self.sisters.append(self.sister)
+
+		self.every_sprites += self.brothers
+		self.every_sprites += self.sisters
 
 		self.brother_physics_engine = arcade.PhysicsEngineSimple(self.brother, self.walls)
 		self.sister_physics_engine = arcade.PhysicsEngineSimple(self.sister, self.walls)
@@ -177,6 +205,8 @@ class Game(arcade.Window):
 
 		arcade.start_render()
 
+		self.grounds.draw()
+
 		for e in (self.engine.brother, self.engine.sister):
 
 			if e.is_out_leveled and e.associated_exclamation is None:
@@ -185,6 +215,7 @@ class Game(arcade.Window):
 				s.center_x = e.x
 				s.center_y = e.y
 				self.exclamations.append(s)
+				self.every_sprites.append(s)
 				e.associated_exclamation = s
 
 			elif not e.is_out_leveled and e.associated_exclamation is not None:
@@ -270,12 +301,32 @@ class Game(arcade.Window):
 
 		self.engine.update(delta_time, self)
 
+		self.fog_of_war_refresh_ttl -= 1
+
+		if self.fog_of_war_refresh_ttl <= 0:
+
+			self.fog_of_war_refresh_ttl = FOG_OF_WAR_REFRESH_TTL
+
+			self.refresh_fog_of_war()
+
 		arcade.set_viewport(
 			int(self.controlled.x - SCREEN_WIDTH/2),
 			int(self.controlled.x + SCREEN_WIDTH/2),
 			int(self.controlled.y - SCREEN_HEIGHT/2),
 			int(self.controlled.y + SCREEN_HEIGHT/2),
 		)
+
+	def refresh_fog_of_war(self):
+
+		x, y = self.controlled.x, self.controlled.y
+
+		for sprite in self.every_sprites:
+
+			if self.can_see_sprite(x, y, sprite):
+				sprite._set_alpha(VISIBLE)
+
+			else:
+				sprite._set_alpha(INVISIBLE)
 
 
 def main():

@@ -13,6 +13,9 @@ SISTER_PANIC_INCREASE_RANGE = 400
 SISTER_PANIC_DECREASE_RANGE = 200
 SISTER_PANIC_D = 0.1
 
+BROTHER_SPEED = 200
+SISTER_SPEED = 0.9*BROTHER_SPEED
+
 
 class MainEntity:
 
@@ -57,7 +60,17 @@ class MainEntity:
 	def is_out_leveled(self):
 		return self.level >= 1
 
-	def set_command(self, x, y, speed):
+	@staticmethod
+	def speed_of(kind):
+		return {
+			MainEntity.BROTHER: BROTHER_SPEED,
+			MainEntity.SISTER: SISTER_SPEED,
+		}[kind]
+
+	def set_command(self, x, y, speed=None):
+
+		if speed is None:
+			speed = MainEntity.speed_of(self.kind)
 
 		l = math.sqrt(x**2 + y**2)
 

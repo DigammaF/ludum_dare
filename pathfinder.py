@@ -1,6 +1,6 @@
 
 
-import arcade
+import arcade, math
 
 from queue import SimpleQueue
 
@@ -8,10 +8,10 @@ from queue import SimpleQueue
 class Tree:
 
 
-	def __init__(self, nodes, poly):
+	def __init__(self, nodes):
 
 		self.nodes = nodes
-		self.poly = poly
+		self.poly = None
 
 	def destroy_route(self, key):
 
@@ -26,15 +26,7 @@ class Tree:
 			and arcade.is_point_in_polygon(x_dst, y_dst, self.poly)
 
 	@staticmethod
-	def generate(game, poly):
-		"""
-
-		generate a pathfinding system for every tile inside poly
-
-		:param game:
-		:param poly:
-		:return:
-		"""
+	def generate(game):
 
 		nodes = []
 		cart_map = {} # {(int, int): bool} (bool: is it a wall?)
@@ -42,31 +34,29 @@ class Tree:
 
 		for ground_sprite in game.grounds:
 
-			if arcade.are_polygons_intersecting(poly, ground_sprite.points):
+			nodes.append(Node.new(
+				x=ground_sprite.center_x,
+				y=ground_sprite.center_y,
+			))
 
-				nodes.append(Node.new(
-					x=ground_sprite.center_x,
-					y=ground_sprite.center_y,
-				))
+			reduced_coord = (
+				ground_sprite.center_x//game.TILE_SIZE,
+				ground_sprite.center_y//game.TILE_SIZE,
+			)
 
-				reduced_coord = (
-					ground_sprite.center_x//game.TILE_SIZE,
-					ground_sprite.center_y//game.TILE_SIZE,
-				)
+			nodes_map[reduced_coord] = nodes[-1]
 
-				nodes_map[reduced_coord] = nodes[-1]
+			if arcade.get_sprites_at_point(
+				[
+					ground_sprite.center_x,
+					ground_sprite.center_y,
+				],
+				game.walls,
+			):
+				cart_map[reduced_coord] = True
 
-				if arcade.get_sprites_at_point(
-					[
-						ground_sprite.center_x,
-						ground_sprite.center_y,
-					],
-					game.walls,
-				):
-					cart_map[reduced_coord] = True
-
-				else:
-					cart_map[reduced_coord] = False
+			else:
+				cart_map[reduced_coord] = False
 
 		for coord, node in cart_map.items():
 
@@ -81,7 +71,7 @@ class Tree:
 					if not cart_map[vicinity_coord]:
 						nodes_map[coord].link_to(nodes_map[vicinity_coord])
 
-		return Tree(nodes=nodes, poly=poly)
+		return Tree(nodes=nodes)
 
 
 class Node:
@@ -118,7 +108,7 @@ class Node:
 
 		for node in self.links.values():
 
-			h = node.safe.get(key, float("inf"))
+			h = node.safe.get(key, {"height": float("inf")})["height"]
 			if h < m: m = h
 
 		return m
@@ -130,7 +120,7 @@ class Node:
 
 		for index, node in self.links.items():
 
-			h = node.safe.get(key, float("inf"))
+			h = node.safe.get(key, {"height": float("inf")})["height"]
 
 			if h < m:
 
@@ -155,8 +145,6 @@ def create_route(src, dst, index_pool):
 
 	tagged = set()
 	left_to_tag = SimpleQueue()
-	left_to_tag.get = left_to_tag.get_nowait
-	left_to_tag.put = left_to_tag.put_nowait
 
 	found = False
 
@@ -168,11 +156,11 @@ def create_route(src, dst, index_pool):
 
 	for node in dst.links.values():
 		tagged.add(node)
-		left_to_tag.put(node)
+		left_to_tag.put_nowait(node)
 
 	while (not found) and (not left_to_tag.empty()):
 
-		node = left_to_tag.get()
+		node = left_to_tag.get_nowait()
 
 		if node is src:
 			found = True
@@ -185,9 +173,52 @@ def create_route(src, dst, index_pool):
 
 			if sub_node not in tagged:
 				tagged.add(sub_node)
-				left_to_tag.put(sub_node)
+				left_to_tag.put_nowait(sub_node)
 
 	return key, found
+
+
+def create_route_points(src_x, src_y, dst_x, dst_y, index_pool, game):
+
+	points = []
+
+	m_src = float("inf")
+	nearest_node_src = None
+	m_dst = float("inf")
+	nearest_node_dst = None
+
+	for node in game.pf_tree.nodes:
+
+		d_src = math.sqrt((src_x - node.x)**2 + (src_y - node.y)**2)
+		d_dst = math.sqrt((dst_x - node.x)**2 + (dst_y - node.y)**2)
+
+		if d_src < m_src:
+
+			m_src = d_src
+			nearest_node_src = node
+
+		if d_dst < m_dst:
+
+			m_dst = d_dst
+			nearest_node_dst = node
+
+	key, found = create_route(nearest_node_src, nearest_node_dst, index_pool)
+
+	if not found: return None, key
+
+	points.append((nearest_node_src.x, nearest_node_src.y))
+
+	current_node = nearest_node_src
+
+	while current_node is not nearest_node_dst:
+
+		next_index = current_node.lower_surrounding_local_index(key)
+		current_node = current_node.links[next_index]
+		points.append((current_node.x, current_node.y))
+
+	points.append((dst_x, dst_y))
+
+	return points, key
 
 
 class IndexPool:
@@ -199,7 +230,7 @@ class IndexPool:
 
 	@staticmethod
 	def new():
-		return IndexError(indexes=set())
+		return IndexPool(indexes=set())
 
 	def create(self):
 

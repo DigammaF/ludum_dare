@@ -1,6 +1,7 @@
 """
 
 TODO: Ajout du pathfinding
+TODO: Ajout de la commande 'viens ici'
 TODO: Ajout du mécanisme berserk
 TODO: Ajout de la commande 'suis moi tout près'
 TODO: Ajout de la commande 'suis moi à moyenne distance'
@@ -11,10 +12,13 @@ TODO: Ajout de la commande 'arrête de me suivre'
 
 import arcade, pathlib
 
-import engine
+import engine, pathfinder
+
+from engine import BROTHER_SPEED, SISTER_SPEED
 
 
 FOG_OF_WAR_REFRESH_TTL = 10
+FOG_OF_WAR_ENABLED = False
 
 
 SCREEN_WIDTH = 1000
@@ -30,10 +34,6 @@ EXCLAMATION_SCALING = 1
 GROUND_SCALING = 1
 
 
-BROTHER_SPEED = 200
-SISTER_SPEED = 0.9*BROTHER_SPEED
-
-
 ASSETS_PATH = pathlib.Path("assets")
 
 BROTHER_SPRITE_PATH = ASSETS_PATH / "brother.png"
@@ -43,6 +43,8 @@ WEAPON_SPRITE_PATH = ASSETS_PATH / "weapon.png"
 EXCLAMATION_SPRITE_PATH = ASSETS_PATH / "exclamation.png"
 
 DEBUG_MAP_PATH = ASSETS_PATH / "debug_map.tmx"
+
+DEBUG_ROUTE = None
 
 
 INVISIBLE = 0
@@ -60,6 +62,8 @@ class Controls:
 	SWITCH_CONTROL = arcade.key.A
 	TAKE_WEAPON = arcade.key.E
 
+	COME_HERE = arcade.key.C
+
 
 	@staticmethod
 	def fill_keyboard(keyboard):
@@ -70,12 +74,22 @@ class Controls:
 		keyboard[Controls.RIGHT] = False
 		keyboard[Controls.SWITCH_CONTROL] = False
 		keyboard[Controls.TAKE_WEAPON] = False
+		keyboard[Controls.COME_HERE] = False
+
+
+class Bag:
+
+
+	route_key = None
+	route = None
 
 
 class Game(arcade.Window):
 
-	
+
 	TILE_SIZE = 100
+
+	ORDER_COME_HERE = 0
 
 
 	def __init__(self):
@@ -114,6 +128,13 @@ class Game(arcade.Window):
 
 		self.fog_of_war_refresh_ttl = 0
 
+		self.current_order = None
+		self.currently_executed_order = None
+		self.current_order_data = None
+
+		self.pf_tree = None
+		self.index_pool = None
+
 	def can_see(self, x, y, dest_x, dest_y):
 
 		line = [[x, y], [dest_x, dest_y]]
@@ -143,6 +164,9 @@ class Game(arcade.Window):
 		if symbol == Controls.SWITCH_CONTROL:
 			self.controlled.stop_commands()
 			self.controlled = [self.engine.brother, self.engine.sister][self.controlled is self.engine.brother]
+
+		if symbol == Controls.COME_HERE:
+			self.current_order = Game.ORDER_COME_HERE
 
 	def on_key_release(self, symbol: int, modifiers: int):
 
@@ -197,8 +221,12 @@ class Game(arcade.Window):
 
 		self.controlled = self.engine.brother
 
-		for sprite in self.every_sprites:
-			sprite._set_alpha(INVISIBLE)
+		if FOG_OF_WAR_ENABLED:
+			for sprite in self.every_sprites:
+				sprite._set_alpha(INVISIBLE)
+
+		self.pf_tree = pathfinder.Tree.generate(self)
+		self.index_pool = pathfinder.IndexPool.new()
 
 	def on_draw(self):
 
@@ -261,6 +289,11 @@ class Game(arcade.Window):
 			)
 		"""
 
+		for e in (self.engine.sister, self.engine.brother):
+			arcade.draw_text(f"{e.x:.2f};{e.y:.2f}",
+				e.x, e.y + 2 * ui_line_size,
+				arcade.csscolor.WHITE, 25)
+
 		for r in (engine.SISTER_PANIC_DECREASE_RANGE, engine.SISTER_PANIC_INCREASE_RANGE):
 			arcade.draw_circle_outline(
 				self.sister.center_x,
@@ -283,7 +316,58 @@ class Game(arcade.Window):
 						 *ig_mouse,
 						 color)
 
+		global DEBUG_ROUTE
+		if DEBUG_ROUTE is not None: arcade.draw_lines(DEBUG_ROUTE, arcade.csscolor.GREEN)
+
+	def update_order(self):
+
+		if self.current_order != self.currently_executed_order:
+
+			self.currently_executed_order = self.current_order
+
+			if self.current_order == Game.ORDER_COME_HERE:
+
+				followed = self.controlled
+				follower = [self.engine.brother, self.engine.sister][self.controlled is self.engine.brother]
+
+				self.current_order_data = Bag()
+
+				points, key = pathfinder.create_route_points(
+					src_x=follower.x,
+					src_y=follower.y,
+					dst_x=followed.x,
+					dst_y=followed.y,
+					index_pool=self.index_pool,
+					game=self,
+				)
+
+				global DEBUG_ROUTE
+				DEBUG_ROUTE = points
+
+				self.current_order_data.route_key = key
+				self.current_order_data.route = points
+
+		if self.current_order == Game.ORDER_COME_HERE:
+
+			follower = [self.engine.brother, self.engine.sister][self.controlled is self.engine.brother]
+
+			if abs(follower.x - self.current_order_data.route[0][0]) < 10\
+				and abs(follower.y - self.current_order_data.route[0][1]) < 10:
+				del self.current_order_data.route[0]
+
+			if self.current_order_data.route:
+				follower.set_command(
+					self.current_order_data.route[0][0] - follower.x,
+					self.current_order_data.route[0][1] - follower.y,
+				)
+
+			else:
+				follower.stop_commands()
+				self.current_order = None
+
 	def on_update(self, delta_time: float):
+
+		self.update_order()
 
 		command_x = 0
 		command_y = 0
@@ -306,7 +390,8 @@ class Game(arcade.Window):
 
 			self.fog_of_war_refresh_ttl = FOG_OF_WAR_REFRESH_TTL
 
-			self.refresh_fog_of_war()
+			if FOG_OF_WAR_ENABLED:
+				self.refresh_fog_of_war()
 
 		arcade.set_viewport(
 			int(self.controlled.x - SCREEN_WIDTH/2),

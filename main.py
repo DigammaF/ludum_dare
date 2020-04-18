@@ -14,7 +14,7 @@ import arcade, pathlib
 import engine
 
 
-FOG_OF_WAR_REFRESH_TTL = 100
+FOG_OF_WAR_REFRESH_TTL = 10
 
 
 SCREEN_WIDTH = 1000
@@ -116,21 +116,16 @@ class Game(arcade.Window):
 	def can_see(self, x, y, dest_x, dest_y):
 
 		line = [[x, y], [dest_x, dest_y]]
-		colliders = []
 
 		for s in self.sight_blocks:
-			if arcade.are_polygons_intersecting(line, s.points):
+			if min(x, dest_x) < s.center_x < max(x, dest_x)\
+					or min(y, dest_y) < s.center_y < max(y, dest_y):
+				if not arcade.is_point_in_polygon(dest_x, dest_y, s.points)\
+					and arcade.are_polygons_intersecting(line, s.points):
 
-				colliders.append(s)
-
-				if len(colliders) >= 2:
 					return False
 
-		if not colliders: return True
-
-		collider = colliders[0]
-
-		return arcade.is_point_in_polygon(dest_x, dest_y, collider.points)
+		return True
 
 	def can_see_sprite(self, x, y, sprite):
 
@@ -200,6 +195,9 @@ class Game(arcade.Window):
 		)
 
 		self.controlled = self.engine.brother
+
+		for sprite in self.every_sprites:
+			sprite._set_alpha(INVISIBLE)
 
 	def on_draw(self):
 
@@ -320,13 +318,21 @@ class Game(arcade.Window):
 
 		x, y = self.controlled.x, self.controlled.y
 
+		screen_poly = [
+			[self.controlled.x - SCREEN_WIDTH//2, self.controlled.y - SCREEN_HEIGHT//2],
+			[self.controlled.x - SCREEN_WIDTH//2, self.controlled.y + SCREEN_HEIGHT//2],
+			[self.controlled.x + SCREEN_WIDTH//2, self.controlled.y + SCREEN_HEIGHT//2],
+			[self.controlled.x + SCREEN_WIDTH//2, self.controlled.y - SCREEN_HEIGHT//2],
+		]
+
 		for sprite in self.every_sprites:
+			if arcade.are_polygons_intersecting(screen_poly, sprite.points):
 
-			if self.can_see_sprite(x, y, sprite):
-				sprite._set_alpha(VISIBLE)
+				if self.can_see_sprite(x, y, sprite):
+					sprite._set_alpha(VISIBLE)
 
-			else:
-				sprite._set_alpha(INVISIBLE)
+				else:
+					sprite._set_alpha(INVISIBLE)
 
 
 def main():

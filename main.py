@@ -164,6 +164,8 @@ class Game(arcade.Window):
 		if symbol == Controls.SWITCH_CONTROL:
 
 			if self.current_order == Game.ORDER_COME_HERE:
+				self.current_order = None
+				self.current_order_data = None
 
 			self.controlled.stop_commands()
 			self.controlled = [self.engine.brother, self.engine.sister][self.controlled is self.engine.brother]

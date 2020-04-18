@@ -22,9 +22,6 @@ SCREEN_HEIGHT = 650
 SCREEN_TITLE = "Test"
 
 
-TILE_SIZE = 100
-
-
 BROTHER_SCALING = 1
 SISTER_SCALING = 1
 WALL_SCALING = 1
@@ -76,6 +73,10 @@ class Controls:
 
 
 class Game(arcade.Window):
+
+	
+	TILE_SIZE = 100
+
 
 	def __init__(self):
 

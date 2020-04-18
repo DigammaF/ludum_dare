@@ -6,6 +6,8 @@ __pycache__/
 *$py.class
 
 .idea
+main.spec
+build_exe.bat
 
 # C extensions
 *.so
@@ -14,7 +16,6 @@ __pycache__/
 .Python
 build/
 develop-eggs/
-dist/
 downloads/
 eggs/
 .eggs/

@@ -108,6 +108,11 @@ class GameEngine:
 		self.sister.dx = sister.change_x
 		self.sister.dy = sister.change_y
 
+		for e in (self.brother, self.sister):
+			if e.associated_exclamation is not None:
+				e.associated_exclamation.center_x = e.x
+				e.associated_exclamation.center_y = e.y
+
 		# Brother and sister mechanics
 
 		if self.brother.is_out_leveled:

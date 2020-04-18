@@ -19,6 +19,9 @@ SCREEN_HEIGHT = 650
 SCREEN_TITLE = "Test"
 
 
+TILE_SIZE = 100
+
+
 BROTHER_SCALING = 1
 SISTER_SCALING = 1
 WALL_SCALING = 1
@@ -50,6 +53,7 @@ class Controls:
 	RIGHT = arcade.key.D
 
 	SWITCH_CONTROL = arcade.key.A
+	TAKE_WEAPON = arcade.key.E
 
 
 	@staticmethod
@@ -60,6 +64,7 @@ class Controls:
 		keyboard[Controls.LEFT] = False
 		keyboard[Controls.RIGHT] = False
 		keyboard[Controls.SWITCH_CONTROL] = False
+		keyboard[Controls.TAKE_WEAPON] = False
 
 
 class Game(arcade.Window):
@@ -160,7 +165,7 @@ class Game(arcade.Window):
 		self.sisters.draw()
 		self.exclamations.draw()
 
-		ui_line_size = 80
+		ui_line_size = 20
 
 		arcade.draw_text(f"Berserk: {self.engine.brother.level:.2f}",
 						 self.brother.center_x, self.brother.center_y - ui_line_size,
@@ -171,10 +176,19 @@ class Game(arcade.Window):
 							 self.brother.center_x, self.brother.center_y - 2*ui_line_size,
 							 arcade.csscolor.WHITE, 25)
 
+		arcade.draw_text(f"Proba: {max(self.engine.brother.level, 0.1):.2f}",
+						 self.brother.center_x, self.brother.center_y - 3*ui_line_size,
+						 arcade.csscolor.WHITE, 25)
+
+		arcade.draw_text(f"Essai: {self.engine.brother.mood_trial_ttl:.2f}",
+						 self.brother.center_x, self.brother.center_y - 4*ui_line_size,
+						 arcade.csscolor.WHITE, 25)
+
 		arcade.draw_text(f"Panique: {self.engine.sister.level:.2f}",
 						 self.sister.center_x, self.sister.center_y - ui_line_size,
 						 arcade.csscolor.WHITE, 25)
 
+		"""
 		for r in (engine.BROTHER_BERSERK_DECREASE_RANGE, engine.BROTHER_BERSERK_INCREASE_RANGE):
 			arcade.draw_circle_outline(
 				self.brother.center_x,
@@ -182,6 +196,7 @@ class Game(arcade.Window):
 				r,
 				arcade.csscolor.WHITE,
 			)
+		"""
 
 		for r in (engine.SISTER_PANIC_DECREASE_RANGE, engine.SISTER_PANIC_INCREASE_RANGE):
 			arcade.draw_circle_outline(
@@ -205,7 +220,7 @@ class Game(arcade.Window):
 		self.brother_physics_engine.update()
 		self.sister_physics_engine.update()
 
-		self.engine.update(delta_time, self.brother, self.sister)
+		self.engine.update(delta_time, self)
 
 		arcade.set_viewport(
 			int(self.controlled.x - SCREEN_WIDTH/2),

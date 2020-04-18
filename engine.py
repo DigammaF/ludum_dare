@@ -1,11 +1,13 @@
 
 
-import arcade, math
+import arcade, math, random
 
 
 BROTHER_BERSERK_DECREASE_RANGE = 400
 BROTHER_BERSERK_INCREASE_RANGE = 200
 BROTHER_BERSERK_D = 0.1
+BROTHER_BERSERK_RND = 0.1
+BROTHER_MOOD_TRIAL_TTL = 6
 
 SISTER_PANIC_INCREASE_RANGE = 400
 SISTER_PANIC_DECREASE_RANGE = 200
@@ -15,7 +17,12 @@ SISTER_PANIC_D = 0.1
 class MainEntity:
 
 
-	def __init__(self, x, y, dx, dy, command_x, command_y, level, has_weapon):
+	BROTHER = 0
+	SISTER = 1
+
+
+	def __init__(self, x, y, dx, dy, command_x, command_y, level, has_weapon,
+				 command_take_weapon, kind):
 
 		self.x = x
 		self.y = y
@@ -25,11 +32,14 @@ class MainEntity:
 		self.command_y = command_y
 		self.level = level # 0-1
 		self.has_weapon = has_weapon
+		self.command_take_weapon = command_take_weapon
+		self.kind = kind
 
 		self.associated_exclamation = None
+		self.mood_trial_ttl = BROTHER_MOOD_TRIAL_TTL
 
 	@staticmethod
-	def new(x, y):
+	def new(x, y, kind):
 		return MainEntity(
 			x=x,
 			y=y,
@@ -39,6 +49,8 @@ class MainEntity:
 			command_y=0,
 			level=0,
 			has_weapon=False,
+			command_take_weapon=False,
+			kind=kind,
 		)
 
 	@property
@@ -72,6 +84,34 @@ class MainEntity:
 		self.command_x = 0
 		self.command_y = 0
 
+	def mood_update(self, dt, d):
+
+		if self.kind == MainEntity.BROTHER:
+
+			if d > BROTHER_BERSERK_DECREASE_RANGE:
+				self.level -= dt*BROTHER_BERSERK_D
+
+			else:
+
+				self.level += random.random()*BROTHER_BERSERK_RND*dt
+
+			self.mood_trial_ttl -= dt
+
+			if self.mood_trial_ttl <= 0:
+
+				self.mood_trial_ttl = BROTHER_MOOD_TRIAL_TTL
+
+				if max(self.level, 0.1) > random.random():
+					self.level += 1
+
+		elif self.kind == MainEntity.SISTER:
+
+			if d > SISTER_PANIC_INCREASE_RANGE:
+				self.level += dt*SISTER_PANIC_D
+
+			if d < SISTER_PANIC_DECREASE_RANGE:
+				self.level -= dt*SISTER_PANIC_D
+
 
 def distance(e1, e2):
 	return math.sqrt((e1.x - e2.x)**2 + (e1.y - e2.y)**2)
@@ -88,15 +128,22 @@ class GameEngine:
 	@staticmethod
 	def new(brother_x=0, brother_y=0, sister_x=0, sister_y=0):
 		return GameEngine(
-			brother=MainEntity.new(brother_x, brother_y),
-			sister=MainEntity.new(sister_x, sister_y),
+			brother=MainEntity.new(brother_x, brother_y, MainEntity.BROTHER),
+			sister=MainEntity.new(sister_x, sister_y, MainEntity.SISTER),
 		)
 
 	def update_brother_berserk(self):
 
 		pass
 
-	def update(self, dt, brother: arcade.Sprite, sister: arcade.Sprite):
+	def update_sister_panicked(self):
+
+		pass
+
+	def update(self, dt, game):
+
+		brother = game.brother
+		sister = game.sister
 
 		self.brother.x = brother.center_x
 		self.brother.y = brother.center_y
@@ -115,22 +162,15 @@ class GameEngine:
 
 		# Brother and sister mechanics
 
+		#collided_weapons = arcade.check_for_collision_with_list(brother, game.weapons):
+
 		if self.brother.is_out_leveled:
 			self.update_brother_berserk()
 
 		d = distance(self.brother, self.sister)
 
-		if d > BROTHER_BERSERK_DECREASE_RANGE:
-			self.brother.level -= dt*BROTHER_BERSERK_D
-
-		if d < BROTHER_BERSERK_INCREASE_RANGE:
-			self.brother.level += dt*BROTHER_BERSERK_D
-
-		if d > SISTER_PANIC_INCREASE_RANGE:
-			self.sister.level += dt*SISTER_PANIC_D
-
-		if d < SISTER_PANIC_DECREASE_RANGE:
-			self.sister.level -= dt*SISTER_PANIC_D
+		self.brother.mood_update(dt, d)
+		self.sister.mood_update(dt, d)
 
 		# End
 

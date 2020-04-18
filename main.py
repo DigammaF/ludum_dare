@@ -29,6 +29,8 @@ WALL_SPRITE_PATH = ASSETS_PATH / "wall.png"
 WEAPON_SPRITE_PATH = ASSETS_PATH / "weapon.png"
 EXCLAMATION_SPRITE_PATH = ASSETS_PATH / "exclamation.png"
 
+DEBUG_MAP_PATH = ASSETS_PATH / "debug_map.tmx"
+
 
 class Controls:
 
@@ -94,9 +96,13 @@ class Game(arcade.Window):
 
 		self.brothers = arcade.SpriteList()
 		self.sisters = arcade.SpriteList()
-		self.walls = arcade.SpriteList()
-		self.weapons = arcade.SpriteList()
+		#self.walls = arcade.SpriteList()
+		#self.weapons = arcade.SpriteList()
 		self.exclamations = arcade.SpriteList()
+
+		map = arcade.tilemap.read_tmx(str(DEBUG_MAP_PATH))
+		self.walls = arcade.tilemap.process_layer(map, "walls", WALL_SCALING)
+		self.weapons = arcade.tilemap.process_layer(map, "weapons", WEAPON_SCALING)
 
 		self.brother = arcade.Sprite(str(BROTHER_SPRITE_PATH), BROTHER_SCALING)
 		self.brother.center_x = SCREEN_WIDTH/2

@@ -78,6 +78,9 @@ class Game(arcade.Window):
 		self.walls = None
 		self.weapons = None
 		self.exclamations = None
+		self.fog_of_war = None
+
+		self.sight_blocks = []
 
 		self.brother = None
 		self.sister = None
@@ -94,6 +97,28 @@ class Game(arcade.Window):
 
 		arcade.set_background_color(arcade.csscolor.CORNFLOWER_BLUE)
 
+		self.mouse_x = 0
+		self.mouse_y = 0
+
+	def can_see(self, x, y, dest_x, dest_y):
+
+		line = [[x, y], [dest_x, dest_y]]
+		colliders = []
+
+		for s in self.sight_blocks:
+			if arcade.are_polygons_intersecting(line, s.points):
+
+				colliders.append(s)
+
+				if len(colliders) >= 2:
+					return False
+
+		if not colliders: return True
+
+		collider = colliders[0]
+
+		return arcade.is_point_in_polygon(dest_x, dest_y, collider.points)
+
 	def on_key_press(self, symbol: int, modifiers: int):
 
 		self.keyboard[symbol] = True
@@ -106,6 +131,11 @@ class Game(arcade.Window):
 
 		self.keyboard[symbol] = False
 
+	def on_mouse_motion(self, x: float, y: float, dx: float, dy: float):
+
+		self.mouse_x = x
+		self.mouse_y = y
+
 	def setup(self):
 
 		self.brothers = arcade.SpriteList()
@@ -113,10 +143,13 @@ class Game(arcade.Window):
 		#self.walls = arcade.SpriteList()
 		#self.weapons = arcade.SpriteList()
 		self.exclamations = arcade.SpriteList()
+		self.fog_of_war = arcade.SpriteList()
 
 		map = arcade.tilemap.read_tmx(str(DEBUG_MAP_PATH))
 		self.walls = arcade.tilemap.process_layer(map, "walls", WALL_SCALING)
 		self.weapons = arcade.tilemap.process_layer(map, "weapons", WEAPON_SCALING)
+
+		self.sight_blocks = self.walls[:]
 
 		self.brother = arcade.Sprite(str(BROTHER_SPRITE_PATH), BROTHER_SCALING)
 		self.brother.center_x = SCREEN_WIDTH/2
@@ -206,6 +239,20 @@ class Game(arcade.Window):
 				arcade.csscolor.WHITE,
 			)
 
+		ig_mouse = (
+			self.controlled.x - (SCREEN_WIDTH / 2) + self.mouse_x,
+			self.controlled.y - (SCREEN_HEIGHT / 2) + self.mouse_y,
+		)
+
+		color = [arcade.csscolor.RED, arcade.csscolor.WHITE][self.can_see(
+			self.controlled.x, self.controlled.y,
+			*ig_mouse,
+		)]
+
+		arcade.draw_line(self.controlled.x, self.controlled.y,
+						 *ig_mouse,
+						 color)
+
 	def on_update(self, delta_time: float):
 
 		command_x = 0
@@ -216,6 +263,7 @@ class Game(arcade.Window):
 		if self.keyboard[Controls.DOWN]: command_y -= 1
 
 		self.controlled.set_command(command_x, command_y, BROTHER_SPEED)
+		self.controlled.command_take_weapon = self.keyboard[Controls.TAKE_WEAPON]
 
 		self.brother_physics_engine.update()
 		self.sister_physics_engine.update()

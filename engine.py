@@ -83,6 +83,7 @@ class MainEntity:
 
 		self.command_x = 0
 		self.command_y = 0
+		self.command_take_weapon = False
 
 	def mood_update(self, dt, d):
 
@@ -162,7 +163,15 @@ class GameEngine:
 
 		# Brother and sister mechanics
 
-		#collided_weapons = arcade.check_for_collision_with_list(brother, game.weapons):
+		if self.brother.command_take_weapon:
+
+			collided_weapons = arcade.check_for_collision_with_list(brother, game.weapons)
+
+			for w in collided_weapons:
+
+				w.remove_from_sprite_lists()
+				self.brother.has_weapon = True
+				break
 
 		if self.brother.is_out_leveled:
 			self.update_brother_berserk()

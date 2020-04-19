@@ -1,6 +1,5 @@
 """
 
-TODO: Ajout du pathfinding
 TODO: Ajout de la commande 'viens ici'
 TODO: Ajout du mécanisme berserk
 TODO: Ajout de la commande 'suis moi tout près'
@@ -12,10 +11,12 @@ TODO: Ajout de la commande 'arrête de me suivre'
 
 import arcade, pathlib
 
+from itertools import chain
+
 import engine, pathfinder
 
 from engine import BROTHER_SPEED, SISTER_SPEED
-from itertools import chain
+from animations import EntitySprite
 
 
 FOG_OF_WAR_REFRESH_TTL = 10
@@ -29,11 +30,10 @@ SCREEN_HEIGHT = 650
 SCREEN_TITLE = "Test"
 
 
-BROTHER_SCALING = 1
-SISTER_SCALING = 1
+ENTITY_SCALING = 100/20 / 2
 WALL_SCALING = 100/20
 WEAPON_SCALING = 100/20
-EXCLAMATION_SCALING = 1
+EXCLAMATION_SCALING = 0.3
 GROUND_SCALING = 100/20
 GLASS_SCALING = 100/20
 SPAWN_SCALING = 100/20
@@ -42,12 +42,20 @@ DOORS_SCALING = 100/20
 
 
 ASSETS_PATH = pathlib.Path("assets")
+ANIMATIONS_PATH = ASSETS_PATH / "animations"
 
 BROTHER_SPRITE_PATH = ASSETS_PATH / "brother.png"
 SISTER_SPRITE_PATH = ASSETS_PATH / "sister.png"
 WALL_SPRITE_PATH = ASSETS_PATH / "wall.png"
 WEAPON_SPRITE_PATH = ASSETS_PATH / "weapon.png"
 EXCLAMATION_SPRITE_PATH = ASSETS_PATH / "exclamation.png"
+
+BROTHER_RUNNING_RIGHT_SCHEME = ANIMATIONS_PATH / "b_running_{}.png"
+BROTHER_IDLE_SCHEME = ANIMATIONS_PATH / "b_idle_{}.png"
+SISTER_RUNNING_RIGHT_SCHEME = ANIMATIONS_PATH / "g_running_{}.png"
+SISTER_IDLE_SCHEME = ANIMATIONS_PATH / "g_idle_{}.png"
+SOLDIER_RUNNING_RIGHT_SCHEME = ANIMATIONS_PATH / "s_running_{}.png"
+SOLDIER_IDLE_SCHEME = ANIMATIONS_PATH / "s_idle_{}.png"
 
 DEBUG_MAP_PATH = ASSETS_PATH / "debug_map.tmx"
 HOUSE_MAP_PATH = ASSETS_PATH / "house.tmx"
@@ -108,13 +116,12 @@ class Game(arcade.Window):
 
 		super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
 
-		self.brothers = None
-		self.sisters = None
 		self.walls = None
 		self.weapons = None
 		self.exclamations = None
 		self.grounds = None
 		self.glasses = None
+		self.entities = None
 
 		self.doors = None
 		self.doors_storage = []
@@ -248,12 +255,11 @@ class Game(arcade.Window):
 
 	def setup(self):
 
-		self.brothers = arcade.SpriteList()
-		self.sisters = arcade.SpriteList()
 		#self.walls = arcade.SpriteList()
 		#self.weapons = arcade.SpriteList()
 		self.exclamations = arcade.SpriteList()
 		self.fog_of_war = arcade.SpriteList()
+		self.entities = arcade.SpriteList()
 
 		map = arcade.tilemap.read_tmx(str(PLAY_MAP))
 		self.walls = arcade.tilemap.process_layer(map, "walls", WALL_SCALING)
@@ -293,18 +299,39 @@ class Game(arcade.Window):
 			spawn_x = 0
 			spawn_y = 0
 
-		self.brother = arcade.Sprite(str(BROTHER_SPRITE_PATH), BROTHER_SCALING)
+		#self.brother = arcade.Sprite(str(BROTHER_SPRITE_PATH), ENTITY_SCALING)
+
+		self.brother = EntitySprite(
+			running_right_file_scheme=str(BROTHER_RUNNING_RIGHT_SCHEME),
+			running_right_amount=5,
+			running_right_pace=0.5,
+			idle_file_scheme=str(BROTHER_IDLE_SCHEME),
+			idle_amount=2,
+			idle_pace=2,
+			m_scale=ENTITY_SCALING,
+		)
+
 		self.brother.center_x = spawn_x
 		self.brother.center_y = spawn_y
-		self.brothers.append(self.brother)
+		self.entities.append(self.brother)
 
-		self.sister = arcade.Sprite(str(SISTER_SPRITE_PATH), SISTER_SCALING)
+		#self.sister = arcade.Sprite(str(SISTER_SPRITE_PATH), ENTITY_SCALING)
+
+		self.sister = EntitySprite(
+			running_right_file_scheme=str(SISTER_RUNNING_RIGHT_SCHEME),
+			running_right_amount=5,
+			running_right_pace=0.5,
+			idle_file_scheme=str(SISTER_IDLE_SCHEME),
+			idle_amount=2,
+			idle_pace=2,
+			m_scale=ENTITY_SCALING,
+		)
+
 		self.sister.center_x = spawn_x
 		self.sister.center_y = spawn_y
-		self.sisters.append(self.sister)
+		self.entities.append(self.sister)
 
-		self.every_sprites += self.brothers
-		self.every_sprites += self.sisters
+		self.every_sprites += self.entities
 
 		self.brother_physics_engine = arcade.PhysicsEngineSimple(self.brother, self.walls)
 		self.brother_glass_physics_engine = arcade.PhysicsEngineSimple(self.brother, self.glasses)
@@ -424,9 +451,14 @@ class Game(arcade.Window):
 		self.glasses.draw()
 		self.doors.draw()
 		self.open_doors.draw()
-		self.weapons.draw()
-		self.brothers.draw()
-		self.sisters.draw()
+
+		for entity in self.entities:
+			entity.texture.draw_scaled(
+				center_x=entity.center_x,
+				center_y=entity.center_y,
+				scale=ENTITY_SCALING,
+			)
+
 		self.exclamations.draw()
 
 		self.draw_debug()
@@ -527,6 +559,9 @@ class Game(arcade.Window):
 			int(self.controlled.y - SCREEN_HEIGHT/2),
 			int(self.controlled.y + SCREEN_HEIGHT/2),
 		)
+
+		for entity in self.entities:
+			entity.update_animation(delta_time)
 
 	def refresh_fog_of_war(self):
 

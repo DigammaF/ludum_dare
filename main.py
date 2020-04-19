@@ -9,7 +9,7 @@ TODO: Ajout de la commande 'arrête de me suivre'
 """
 
 
-import arcade, pathlib
+import arcade, pathlib, cProfile, pstats
 
 from itertools import chain
 
@@ -20,7 +20,7 @@ from animations import EntitySprite
 
 
 FOG_OF_WAR_REFRESH_TTL = 10
-FOG_OF_WAR_ENABLED = bool(1)
+FOG_OF_WAR_ENABLED = bool(0)
 
 DOOR_INTERACTION_RANGE = 150
 
@@ -449,7 +449,7 @@ class Game(arcade.Window):
 
 		self.exclamations.draw()
 
-		self.draw_debug()
+		#self.draw_debug()
 
 	def update_order(self):
 
@@ -579,4 +579,10 @@ def main():
 
 
 if __name__ == "__main__":
-	main()
+
+	profile = cProfile.Profile()
+	profile.runcall(main)
+
+	ps = pstats.Stats(profile)
+	ps.dump_stats("perf_logs.txt")
+	ps.print_stats()

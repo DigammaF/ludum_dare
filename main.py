@@ -134,9 +134,6 @@ class Game(arcade.Window):
 
 		self.fog_of_war = None
 
-		self.sight_blocks = []
-		self.every_sprites = []
-
 		self.brother = None
 		self.sister = None
 
@@ -172,7 +169,7 @@ class Game(arcade.Window):
 
 		line = [[x, y], [dest_x, dest_y]]
 
-		for s in chain(self.sight_blocks, self.doors):
+		for s in chain(self.walls, self.doors):
 			if min(x, dest_x) < s.center_x < max(x, dest_x)\
 					or min(y, dest_y) < s.center_y < max(y, dest_y):
 				if not arcade.is_point_in_polygon(dest_x, dest_y, s.points)\
@@ -285,12 +282,6 @@ class Game(arcade.Window):
 			self.door_pairing.append((closed_door, door))
 			print(str(distance))
 
-		self.sight_blocks = self.walls[:]
-		self.every_sprites = self.walls[:]
-		self.every_sprites += self.weapons
-		self.every_sprites += self.grounds
-		self.every_sprites += self.glasses
-
 		if self.spawn:
 			spawn_x = self.spawn[0].center_x
 			spawn_y = self.spawn[0].center_y
@@ -331,8 +322,6 @@ class Game(arcade.Window):
 		self.sister.center_y = spawn_y
 		self.entities.append(self.sister)
 
-		self.every_sprites += self.entities
-
 		self.brother_physics_engine = arcade.PhysicsEngineSimple(self.brother, self.walls)
 		self.brother_glass_physics_engine = arcade.PhysicsEngineSimple(self.brother, self.glasses)
 		self.brother_doors_physics_engine = arcade.PhysicsEngineSimple(self.brother, self.doors)
@@ -350,7 +339,7 @@ class Game(arcade.Window):
 		self.controlled = self.engine.brother
 
 		if FOG_OF_WAR_ENABLED:
-			for sprite in self.every_sprites:
+			for sprite in chain(self.grounds, self.entities, self.walls, self.glasses, self.doors, self.open_doors, self.weapons):
 				sprite._set_alpha(INVISIBLE)
 
 		self.pf_tree = pathfinder.Tree.generate(self)
@@ -366,7 +355,6 @@ class Game(arcade.Window):
 				s.center_x = e.x
 				s.center_y = e.y
 				self.exclamations.append(s)
-				self.every_sprites.append(s)
 				e.associated_exclamation = s
 
 			elif not e.is_out_leveled and e.associated_exclamation is not None:
@@ -574,7 +562,7 @@ class Game(arcade.Window):
 			[self.controlled.x + SCREEN_WIDTH//2, self.controlled.y - SCREEN_HEIGHT//2],
 		]
 
-		for sprite in chain(self.every_sprites, self.doors, self.open_doors):
+		for sprite in chain(self.grounds, self.entities, self.walls, self.glasses, self.doors, self.open_doors, self.weapons):
 			if arcade.is_point_in_polygon(sprite.center_x, sprite.center_y, screen_poly):
 
 				if self.can_see_sprite(x, y, sprite):

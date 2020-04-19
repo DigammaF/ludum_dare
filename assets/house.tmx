@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.2" tiledversion="1.2.5" orientation="orthogonal" renderorder="left-down" width="100" height="100" tilewidth="24" tileheight="24" infinite="0" nextlayerid="13" nextobjectid="5">
+ <tileset firstgid="1" source="tileset_maison.tsx"/>
+ <layer id="1" name="ground" width="100" height="100" locked="1">
+  <data encoding="base64" compression="zlib">
+   eJzt101qwzAQBlDnElkVuskirTe9/+mSRQJCjDqypQRD3oMhcjBezKcfe1kAAAAAAAAAAHiHr0b93uvnMeZ95HEs8jgWecx1Siojj7lG8yi18qjrk2X9nlnyyG2Z/9F6qO+Tx5hZc//c8bw6j797XYP6ZParY9l6Xkd7mDxeo3Vm9OR1qn6jZ8pjXO+c/y7Gl2K8VtfyGJPl8ez1M491aX8DymNc7/qI3pOyksd2ZZ+iczlaE9H+ZH3MEfX3v36vjbE85sh6nmXU+l8e+5T9b/U226+i/OSxT2u/6c2mda889qm/JXqzyd575QEAAAAAAAAAAAAAAAAAAAAAAAAAAADAkdwAqBwrPg==
+  </data>
+ </layer>
+ <layer id="3" name="walls" width="100" height="100" locked="1">
+  <data encoding="base64" compression="zlib">
+   eJzt14EKgjAQANBRaQl9QNT//2cKCWuYW2RL8j04qsG0drebhQAAAAAAAAAAwFocfv0FeCIf6yIf5bo+zn00E3Fa6B7yUW5urfYV7rE1Y/0PxrofPw/1n8tHF82J900XyvfSZSK2Krfexz52jwjR+yHaF/P3E+NL7aV/V1r/zWMsrXn5WFat3i0fZd7pV2nP0q+Wl653ej6k53IIz/1qnB+Seel12+//lL8QP9PcJsZy+yd+HhperzPX5HM1/n9QTj7WJXe+UFfufAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIA1uAMblQS4
+  </data>
+ </layer>
+ <layer id="11" name="glass" width="100" height="100" locked="1">
+  <data encoding="base64" compression="zlib">
+   eJzt1t0KgjAUAGDvoygquqonqHz/txMiYQzTTfMH9n0gG+44x47jWFUAAAAAAAAAAADAUnbfi3Uc115AwVK//VPHc12uGe9+Z8TCUg5Bfz/D/OGczgAlukVtfD/kjEzXVa/H/PPKxXbcE2Lka9g56Ie1+ZI5z7NnTB4o3WvtBRQgpSa0HgPj9ZSF8DG0xymx9Y8++XLzoW7Pq81Hyj73xdZRyzj/OB9yAQAAAAAAAAAAAAAAAAAAAAAAAAAAAMAWNCSTBds=
+  </data>
+ </layer>
+ <layer id="4" name="doors" width="100" height="100" locked="1">
+  <data encoding="base64" compression="zlib">
+   eJzt1DEKACAMA0BnF8HN/3/U2UFEESp4t5ZCIJCUAAAAAAAAAAAAACBWjQ7AoEQH+Fw+vK/+uMdmvWW2WXp6S4sOAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACwqQPTcQCM
+  </data>
+ </layer>
+ <layer id="12" name="spawn" width="100" height="100">
+  <data encoding="base64" compression="zlib">
+   eJztzgENAAAIA6BXsn85Y3w6SEACAAAAAAAAAAAAAAAAAAAA/0w7AAAAAAAAAAAAAAAAAAAAAAAAAAAAAACctWc+ADI=
+  </data>
+ </layer>
+</map>

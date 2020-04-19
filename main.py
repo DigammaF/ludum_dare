@@ -18,7 +18,7 @@ from engine import BROTHER_SPEED, SISTER_SPEED
 
 
 FOG_OF_WAR_REFRESH_TTL = 10
-FOG_OF_WAR_ENABLED = True
+FOG_OF_WAR_ENABLED = bool(1)
 
 
 SCREEN_WIDTH = 1000
@@ -28,10 +28,12 @@ SCREEN_TITLE = "Test"
 
 BROTHER_SCALING = 1
 SISTER_SCALING = 1
-WALL_SCALING = 1
-WEAPON_SCALING = 1
+WALL_SCALING = 100/20
+WEAPON_SCALING = 100/20
 EXCLAMATION_SCALING = 1
-GROUND_SCALING = 1
+GROUND_SCALING = 100/20
+GLASS_SCALING = 100/20
+SPAWN_SCALING = 100/20
 
 
 ASSETS_PATH = pathlib.Path("assets")
@@ -43,6 +45,9 @@ WEAPON_SPRITE_PATH = ASSETS_PATH / "weapon.png"
 EXCLAMATION_SPRITE_PATH = ASSETS_PATH / "exclamation.png"
 
 DEBUG_MAP_PATH = ASSETS_PATH / "debug_map.tmx"
+HOUSE_MAP_PATH = ASSETS_PATH / "house.tmx"
+
+PLAY_MAP = HOUSE_MAP_PATH
 
 DEBUG_ROUTE = None
 
@@ -87,7 +92,7 @@ class Bag:
 class Game(arcade.Window):
 
 
-	TILE_SIZE = 100
+	TILE_SIZE = 20
 
 	ORDER_COME_HERE = 0
 
@@ -102,6 +107,9 @@ class Game(arcade.Window):
 		self.weapons = None
 		self.exclamations = None
 		self.grounds = None
+		self.glasses = None
+
+		self.spawn = None
 
 		self.fog_of_war = None
 
@@ -114,7 +122,9 @@ class Game(arcade.Window):
 		self.engine = None
 
 		self.brother_physics_engine = None
+		self.brother_glass_physics_engine = None
 		self.sister_physics_engine = None
+		self.sister_glass_physics_engine = None
 
 		self.keyboard = {}
 		Controls.fill_keyboard(self.keyboard)
@@ -191,31 +201,44 @@ class Game(arcade.Window):
 		self.exclamations = arcade.SpriteList()
 		self.fog_of_war = arcade.SpriteList()
 
-		map = arcade.tilemap.read_tmx(str(DEBUG_MAP_PATH))
+		map = arcade.tilemap.read_tmx(str(PLAY_MAP))
 		self.walls = arcade.tilemap.process_layer(map, "walls", WALL_SCALING)
 		self.weapons = arcade.tilemap.process_layer(map, "weapons", WEAPON_SCALING)
 		self.grounds = arcade.tilemap.process_layer(map, "ground", GROUND_SCALING)
+		self.glasses = arcade.tilemap.process_layer(map, "glass", GLASS_SCALING)
+		self.spawn = arcade.tilemap.process_layer(map, "spawn", SPAWN_SCALING)
 
 		self.sight_blocks = self.walls[:]
 		self.every_sprites = self.walls[:]
 		self.every_sprites += self.weapons
 		self.every_sprites += self.grounds
+		self.every_sprites += self.glasses
+
+		if self.spawn:
+			spawn_x = self.spawn[0].center_x
+			spawn_y = self.spawn[0].center_y
+
+		else:
+			spawn_x = 0
+			spawn_y = 0
 
 		self.brother = arcade.Sprite(str(BROTHER_SPRITE_PATH), BROTHER_SCALING)
-		self.brother.center_x = SCREEN_WIDTH/2
-		self.brother.center_y = SCREEN_HEIGHT/2
+		self.brother.center_x = spawn_x
+		self.brother.center_y = spawn_y
 		self.brothers.append(self.brother)
 
 		self.sister = arcade.Sprite(str(SISTER_SPRITE_PATH), SISTER_SCALING)
-		self.sister.center_x = SCREEN_WIDTH/2
-		self.sister.center_y = SCREEN_HEIGHT/2
+		self.sister.center_x = spawn_x
+		self.sister.center_y = spawn_y
 		self.sisters.append(self.sister)
 
 		self.every_sprites += self.brothers
 		self.every_sprites += self.sisters
 
 		self.brother_physics_engine = arcade.PhysicsEngineSimple(self.brother, self.walls)
+		self.brother_glass_physics_engine = arcade.PhysicsEngineSimple(self.brother, self.glasses)
 		self.sister_physics_engine = arcade.PhysicsEngineSimple(self.sister, self.walls)
+		self.sister_glass_physics_engine = arcade.PhysicsEngineSimple(self.sister, self.glasses)
 
 		self.engine = engine.GameEngine.new(
 			self.brother.center_x,
@@ -233,11 +256,7 @@ class Game(arcade.Window):
 		self.pf_tree = pathfinder.Tree.generate(self)
 		self.index_pool = pathfinder.IndexPool.new()
 
-	def on_draw(self):
-
-		arcade.start_render()
-
-		self.grounds.draw()
+	def draw_out_level_indicators(self):
 
 		for e in (self.engine.brother, self.engine.sister):
 
@@ -255,11 +274,7 @@ class Game(arcade.Window):
 				e.associated_exclamation.remove_from_sprite_lists()
 				e.associated_exclamation = None
 
-		self.walls.draw()
-		self.weapons.draw()
-		self.brothers.draw()
-		self.sisters.draw()
-		self.exclamations.draw()
+	def draw_debug(self):
 
 		ui_line_size = 20
 
@@ -269,15 +284,15 @@ class Game(arcade.Window):
 
 		if self.engine.brother.has_weapon:
 			arcade.draw_text("Armé",
-							 self.brother.center_x, self.brother.center_y - 2*ui_line_size,
+							 self.brother.center_x, self.brother.center_y - 2 * ui_line_size,
 							 arcade.csscolor.WHITE, 25)
 
 		arcade.draw_text(f"Proba: {max(self.engine.brother.level, 0.1):.2f}",
-						 self.brother.center_x, self.brother.center_y - 3*ui_line_size,
+						 self.brother.center_x, self.brother.center_y - 3 * ui_line_size,
 						 arcade.csscolor.WHITE, 25)
 
 		arcade.draw_text(f"Essai: {self.engine.brother.mood_trial_ttl:.2f}",
-						 self.brother.center_x, self.brother.center_y - 4*ui_line_size,
+						 self.brother.center_x, self.brother.center_y - 4 * ui_line_size,
 						 arcade.csscolor.WHITE, 25)
 
 		arcade.draw_text(f"Panique: {self.engine.sister.level:.2f}",
@@ -296,8 +311,8 @@ class Game(arcade.Window):
 
 		for e in (self.engine.sister, self.engine.brother):
 			arcade.draw_text(f"{e.x:.2f};{e.y:.2f}",
-				e.x, e.y + 2 * ui_line_size,
-				arcade.csscolor.WHITE, 25)
+							 e.x, e.y + 2 * ui_line_size,
+							 arcade.csscolor.WHITE, 25)
 
 		for r in (engine.SISTER_PANIC_DECREASE_RANGE, engine.SISTER_PANIC_INCREASE_RANGE):
 			arcade.draw_circle_outline(
@@ -324,6 +339,23 @@ class Game(arcade.Window):
 		global DEBUG_ROUTE
 		if DEBUG_ROUTE is not None: arcade.draw_lines(DEBUG_ROUTE, arcade.csscolor.GREEN)
 
+	def on_draw(self):
+
+		arcade.start_render()
+
+		self.grounds.draw()
+
+		self.draw_out_level_indicators()
+
+		self.walls.draw()
+		self.glasses.draw()
+		self.weapons.draw()
+		self.brothers.draw()
+		self.sisters.draw()
+		self.exclamations.draw()
+
+		self.draw_debug()
+
 	def update_order(self):
 
 		if self.current_order != self.currently_executed_order:
@@ -345,6 +377,11 @@ class Game(arcade.Window):
 					index_pool=self.index_pool,
 					game=self,
 				)
+
+				if points is None:
+					print("Unable to do that")
+					self.current_order = None
+					return
 
 				global DEBUG_ROUTE
 				DEBUG_ROUTE = points
@@ -370,9 +407,7 @@ class Game(arcade.Window):
 				follower.stop_commands()
 				self.current_order = None
 
-	def on_update(self, delta_time: float):
-
-		self.update_order()
+	def update_checking_keyboard(self):
 
 		command_x = 0
 		command_y = 0
@@ -384,10 +419,7 @@ class Game(arcade.Window):
 		self.controlled.set_command(command_x, command_y, BROTHER_SPEED)
 		self.controlled.command_take_weapon = self.keyboard[Controls.TAKE_WEAPON]
 
-		self.brother_physics_engine.update()
-		self.sister_physics_engine.update()
-
-		self.engine.update(delta_time, self)
+	def update_fog_of_war(self):
 
 		self.fog_of_war_refresh_ttl -= 1
 
@@ -395,8 +427,20 @@ class Game(arcade.Window):
 
 			self.fog_of_war_refresh_ttl = FOG_OF_WAR_REFRESH_TTL
 
-			if FOG_OF_WAR_ENABLED:
-				self.refresh_fog_of_war()
+			self.refresh_fog_of_war()
+
+	def on_update(self, delta_time: float):
+
+		self.update_order()
+
+		self.update_checking_keyboard()
+
+		self.brother_physics_engine.update()
+		self.sister_physics_engine.update()
+
+		self.engine.update(delta_time, self)
+
+		if FOG_OF_WAR_ENABLED: self.update_fog_of_war()
 
 		arcade.set_viewport(
 			int(self.controlled.x - SCREEN_WIDTH/2),
@@ -410,14 +454,14 @@ class Game(arcade.Window):
 		x, y = self.controlled.x, self.controlled.y
 
 		screen_poly = [
-			[self.controlled.x - SCREEN_WIDTH//2, self.controlled.y - SCREEN_HEIGHT//2],
-			[self.controlled.x - SCREEN_WIDTH//2, self.controlled.y + SCREEN_HEIGHT//2],
-			[self.controlled.x + SCREEN_WIDTH//2, self.controlled.y + SCREEN_HEIGHT//2],
-			[self.controlled.x + SCREEN_WIDTH//2, self.controlled.y - SCREEN_HEIGHT//2],
+			[self.controlled.x - SCREEN_WIDTH//2 - Game.TILE_SIZE, self.controlled.y - SCREEN_HEIGHT//2 - Game.TILE_SIZE],
+			[self.controlled.x - SCREEN_WIDTH//2 - Game.TILE_SIZE, self.controlled.y + SCREEN_HEIGHT//2 + Game.TILE_SIZE],
+			[self.controlled.x + SCREEN_WIDTH//2 + Game.TILE_SIZE, self.controlled.y + SCREEN_HEIGHT//2 + Game.TILE_SIZE],
+			[self.controlled.x + SCREEN_WIDTH//2 + Game.TILE_SIZE, self.controlled.y - SCREEN_HEIGHT//2 - Game.TILE_SIZE],
 		]
 
 		for sprite in self.every_sprites:
-			if arcade.are_polygons_intersecting(screen_poly, sprite.points):
+			if arcade.is_point_in_polygon(sprite.center_x, sprite.center_y, screen_poly):
 
 				if self.can_see_sprite(x, y, sprite):
 					sprite._set_alpha(VISIBLE)

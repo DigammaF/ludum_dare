@@ -29,36 +29,25 @@ class Tree:
 	def generate(game):
 
 		nodes = []
-		cart_map = {} # {(int, int): bool} (bool: is it a wall?)
 		nodes_map = {} # {(int, int): node}
 
-		for ground_sprite in game.grounds:
+		for sprite in game.pf_data:
 
-			nodes.append(Node.new(
-				x=ground_sprite.center_x,
-				y=ground_sprite.center_y,
-			))
-
-			reduced_coord = (
-				ground_sprite.center_x//game.TILE_SIZE,
-				ground_sprite.center_y//game.TILE_SIZE,
+			nnode = Node.new(
+				x=sprite.center_x,
+				y=sprite.center_y,
 			)
 
-			nodes_map[reduced_coord] = nodes[-1]
+			nodes.append(nnode)
 
-			if arcade.get_sprites_at_point(
-				[
-					ground_sprite.center_x,
-					ground_sprite.center_y,
-				],
-				game.walls,
-			):
-				cart_map[reduced_coord] = True
+			reduced_coord = (
+				sprite.center_x//game.TILE_SIZE,
+				sprite.center_y//game.TILE_SIZE,
+			)
 
-			else:
-				cart_map[reduced_coord] = False
+			nodes_map[reduced_coord] = nnode
 
-		for coord, node in cart_map.items():
+		for coord, node in nodes_map.items():
 
 			for vicinity_coord in (
 				(coord[0] + 1, coord[1]),
@@ -67,9 +56,8 @@ class Tree:
 				(coord[0], coord[1] - 1),
 			):
 
-				if vicinity_coord in cart_map:
-					if not cart_map[vicinity_coord]:
-						nodes_map[coord].link_to(nodes_map[vicinity_coord])
+				if vicinity_coord in nodes_map:
+					nodes_map[coord].link_to(nodes_map[vicinity_coord])
 
 		return Tree(nodes=nodes)
 
@@ -83,6 +71,9 @@ class Node:
 		self.safe = safe # {int: {"height": int}
 		self.x = x
 		self.y = y
+
+	def __str__(self):
+		return f"{self.x};{self.y};{self.links.keys()}"
 
 	@staticmethod
 	def new(x, y):

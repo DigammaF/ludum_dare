@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.2" tiledversion="1.2.5" name="Maison" tilewidth="100" tileheight="100" tilecount="49" columns="0">
+<tileset version="1.2" tiledversion="1.2.5" name="Maison" tilewidth="100" tileheight="100" tilecount="53" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image width="24" height="24" source="Tiles/Parquet.png"/>
@@ -56,10 +56,8 @@
  </tile>
  <tile id="9">
   <image width="24" height="24" source="Tiles/Porte.png"/>
-  <objectgroup draworder="index" id="2">
-   <object id="1" x="18.0248" y="2.05795" width="4.96747" height="19.7989"/>
-   <object id="2" x="16.9604" y="21.9279" width="7.02543" height="1.91603"/>
-   <object id="3" x="17.1023" y="-0.141928" width="6.8835" height="2.12892"/>
+  <objectgroup draworder="index">
+   <object id="5" x="16.8182" y="0.181818" width="7.27273" height="23.8182"/>
   </objectgroup>
  </tile>
  <tile id="10">
@@ -239,5 +237,17 @@
  </tile>
  <tile id="48">
   <image width="100" height="100" source="spawn.png"/>
+ </tile>
+ <tile id="49">
+  <image width="20" height="20" source="pathfinder.png"/>
+ </tile>
+ <tile id="50">
+  <image width="20" height="20" source="pathfinder.png"/>
+ </tile>
+ <tile id="51">
+  <image width="20" height="20" source="lil_weapon.png"/>
+ </tile>
+ <tile id="52">
+  <image width="20" height="20" source="open_door.png"/>
  </tile>
 </tileset>

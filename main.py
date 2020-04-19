@@ -15,10 +15,13 @@ import arcade, pathlib
 import engine, pathfinder
 
 from engine import BROTHER_SPEED, SISTER_SPEED
+from itertools import chain
 
 
 FOG_OF_WAR_REFRESH_TTL = 10
 FOG_OF_WAR_ENABLED = bool(1)
+
+DOOR_INTERACTION_RANGE = 150
 
 
 SCREEN_WIDTH = 1000
@@ -34,6 +37,8 @@ EXCLAMATION_SCALING = 1
 GROUND_SCALING = 100/20
 GLASS_SCALING = 100/20
 SPAWN_SCALING = 100/20
+PATHFINDER_SCALING = 100/20
+DOORS_SCALING = 100/20
 
 
 ASSETS_PATH = pathlib.Path("assets")
@@ -66,6 +71,7 @@ class Controls:
 
 	SWITCH_CONTROL = arcade.key.A
 	TAKE_WEAPON = arcade.key.E
+	DOOR = arcade.key.F
 
 	COME_HERE = arcade.key.C
 
@@ -80,6 +86,7 @@ class Controls:
 		keyboard[Controls.SWITCH_CONTROL] = False
 		keyboard[Controls.TAKE_WEAPON] = False
 		keyboard[Controls.COME_HERE] = False
+		keyboard[Controls.DOOR] = False
 
 
 class Bag:
@@ -92,7 +99,7 @@ class Bag:
 class Game(arcade.Window):
 
 
-	TILE_SIZE = 20
+	TILE_SIZE = 100
 
 	ORDER_COME_HERE = 0
 
@@ -109,7 +116,14 @@ class Game(arcade.Window):
 		self.grounds = None
 		self.glasses = None
 
+		self.doors = None
+		self.doors_storage = []
+		self.open_doors = None
+		self.open_doors_storage = []
+		self.door_pairing = [] # [(Sprite (door), Sprite (open))]
+
 		self.spawn = None
+		self.pf_data = None
 
 		self.fog_of_war = None
 
@@ -123,8 +137,10 @@ class Game(arcade.Window):
 
 		self.brother_physics_engine = None
 		self.brother_glass_physics_engine = None
+		self.brother_doors_physics_engine = None
 		self.sister_physics_engine = None
 		self.sister_glass_physics_engine = None
+		self.sister_doors_physics_engine = None
 
 		self.keyboard = {}
 		Controls.fill_keyboard(self.keyboard)
@@ -149,7 +165,7 @@ class Game(arcade.Window):
 
 		line = [[x, y], [dest_x, dest_y]]
 
-		for s in self.sight_blocks:
+		for s in chain(self.sight_blocks, self.doors):
 			if min(x, dest_x) < s.center_x < max(x, dest_x)\
 					or min(y, dest_y) < s.center_y < max(y, dest_y):
 				if not arcade.is_point_in_polygon(dest_x, dest_y, s.points)\
@@ -183,6 +199,44 @@ class Game(arcade.Window):
 		if symbol == Controls.COME_HERE:
 			self.current_order = Game.ORDER_COME_HERE
 
+		if symbol == Controls.DOOR:
+
+			player_sprite = [self.brother, self.sister][self.controlled is self.engine.sister]
+
+			r = arcade.get_closest_sprite(player_sprite, self.doors)
+
+			if r is None:
+				nearest_closed_door, distance_c = None, float("inf")
+
+			else:
+				nearest_closed_door, distance_c = r
+
+			r = arcade.get_closest_sprite(player_sprite, self.open_doors)
+
+			if r is None:
+				nearest_open_door, distance_o = None, float("inf")
+
+			else:
+				nearest_open_door, distance_o = r
+
+			if distance_c < distance_o and distance_c < DOOR_INTERACTION_RANGE:
+
+				for door, open_door in self.door_pairing:
+
+					if door is nearest_closed_door:
+						nearest_closed_door.remove_from_sprite_lists()
+						self.open_doors.append(open_door)
+						break
+
+			if distance_o < distance_c and distance_o < DOOR_INTERACTION_RANGE:
+
+				for door, open_door in self.door_pairing:
+
+					if open_door is nearest_open_door:
+						nearest_open_door.remove_from_sprite_lists()
+						self.doors.append(door)
+						break
+
 	def on_key_release(self, symbol: int, modifiers: int):
 
 		self.keyboard[symbol] = False
@@ -207,6 +261,23 @@ class Game(arcade.Window):
 		self.grounds = arcade.tilemap.process_layer(map, "ground", GROUND_SCALING)
 		self.glasses = arcade.tilemap.process_layer(map, "glass", GLASS_SCALING)
 		self.spawn = arcade.tilemap.process_layer(map, "spawn", SPAWN_SCALING)
+		self.pf_data = arcade.tilemap.process_layer(map, "pathfinder", PATHFINDER_SCALING)
+		self.doors = arcade.tilemap.process_layer(map, "doors", DOORS_SCALING)
+		self.open_doors = arcade.tilemap.process_layer(map, "open_doors", DOORS_SCALING)
+
+		self.doors_storage = self.doors[:]
+		self.open_doors_storage = self.open_doors[:]
+
+		while self.open_doors:
+			self.open_doors[0].remove_from_sprite_lists()
+
+		self.door_pairing = []
+
+		for door in self.open_doors_storage:
+
+			closed_door, distance = arcade.get_closest_sprite(door, self.doors)
+			self.door_pairing.append((closed_door, door))
+			print(str(distance))
 
 		self.sight_blocks = self.walls[:]
 		self.every_sprites = self.walls[:]
@@ -237,8 +308,10 @@ class Game(arcade.Window):
 
 		self.brother_physics_engine = arcade.PhysicsEngineSimple(self.brother, self.walls)
 		self.brother_glass_physics_engine = arcade.PhysicsEngineSimple(self.brother, self.glasses)
+		self.brother_doors_physics_engine = arcade.PhysicsEngineSimple(self.brother, self.doors)
 		self.sister_physics_engine = arcade.PhysicsEngineSimple(self.sister, self.walls)
 		self.sister_glass_physics_engine = arcade.PhysicsEngineSimple(self.sister, self.glasses)
+		self.sister_doors_physics_engine = arcade.PhysicsEngineSimple(self.sister, self.doors)
 
 		self.engine = engine.GameEngine.new(
 			self.brother.center_x,
@@ -349,6 +422,8 @@ class Game(arcade.Window):
 
 		self.walls.draw()
 		self.glasses.draw()
+		self.doors.draw()
+		self.open_doors.draw()
 		self.weapons.draw()
 		self.brothers.draw()
 		self.sisters.draw()
@@ -436,7 +511,11 @@ class Game(arcade.Window):
 		self.update_checking_keyboard()
 
 		self.brother_physics_engine.update()
+		self.brother_glass_physics_engine.update()
+		self.brother_doors_physics_engine.update()
 		self.sister_physics_engine.update()
+		self.sister_glass_physics_engine.update()
+		self.sister_doors_physics_engine.update()
 
 		self.engine.update(delta_time, self)
 
@@ -454,13 +533,13 @@ class Game(arcade.Window):
 		x, y = self.controlled.x, self.controlled.y
 
 		screen_poly = [
-			[self.controlled.x - SCREEN_WIDTH//2 - Game.TILE_SIZE, self.controlled.y - SCREEN_HEIGHT//2 - Game.TILE_SIZE],
-			[self.controlled.x - SCREEN_WIDTH//2 - Game.TILE_SIZE, self.controlled.y + SCREEN_HEIGHT//2 + Game.TILE_SIZE],
-			[self.controlled.x + SCREEN_WIDTH//2 + Game.TILE_SIZE, self.controlled.y + SCREEN_HEIGHT//2 + Game.TILE_SIZE],
-			[self.controlled.x + SCREEN_WIDTH//2 + Game.TILE_SIZE, self.controlled.y - SCREEN_HEIGHT//2 - Game.TILE_SIZE],
+			[self.controlled.x - SCREEN_WIDTH//2, self.controlled.y - SCREEN_HEIGHT//2],
+			[self.controlled.x - SCREEN_WIDTH//2, self.controlled.y + SCREEN_HEIGHT//2],
+			[self.controlled.x + SCREEN_WIDTH//2, self.controlled.y + SCREEN_HEIGHT//2],
+			[self.controlled.x + SCREEN_WIDTH//2, self.controlled.y - SCREEN_HEIGHT//2],
 		]
 
-		for sprite in self.every_sprites:
+		for sprite in chain(self.every_sprites, self.doors, self.open_doors):
 			if arcade.is_point_in_polygon(sprite.center_x, sprite.center_y, screen_poly):
 
 				if self.can_see_sprite(x, y, sprite):

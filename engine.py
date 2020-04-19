@@ -15,6 +15,7 @@ SISTER_PANIC_D = 0.1
 
 BROTHER_SPEED = 100
 SISTER_SPEED = 0.9*BROTHER_SPEED
+SOLDIER_SPEED = 1.1*BROTHER_SPEED
 
 
 class MainEntity:
@@ -22,10 +23,11 @@ class MainEntity:
 
 	BROTHER = 0
 	SISTER = 1
+	SOLDIER = 2
 
 
 	def __init__(self, x, y, dx, dy, command_x, command_y, level, has_weapon,
-				 command_take_weapon, kind):
+				 command_take_weapon, kind, speed=None):
 
 		self.x = x
 		self.y = y
@@ -40,6 +42,14 @@ class MainEntity:
 
 		self.associated_exclamation = None
 		self.mood_trial_ttl = BROTHER_MOOD_TRIAL_TTL
+
+		self.associated_sprite = None
+		self.associated_physics_engine = None
+
+		if speed is None:
+			speed = MainEntity.speed_of(kind)
+
+		self.speed = speed
 
 	@staticmethod
 	def new(x, y, kind):
@@ -65,12 +75,13 @@ class MainEntity:
 		return {
 			MainEntity.BROTHER: BROTHER_SPEED,
 			MainEntity.SISTER: SISTER_SPEED,
+			MainEntity.SOLDIER: SOLDIER_SPEED,
 		}[kind]
 
 	def set_command(self, x, y, speed=None):
 
 		if speed is None:
-			speed = MainEntity.speed_of(self.kind)
+			speed = self.speed
 
 		l = math.sqrt(x**2 + y**2)
 
@@ -94,9 +105,13 @@ class MainEntity:
 
 	def stop_commands(self):
 
+		self.stop_motion_command()
+		self.command_take_weapon = False
+
+	def stop_motion_command(self):
+
 		self.command_x = 0
 		self.command_y = 0
-		self.command_take_weapon = False
 
 	def mood_update(self, dt, d):
 
@@ -126,6 +141,18 @@ class MainEntity:
 			if d < SISTER_PANIC_DECREASE_RANGE:
 				self.level -= dt*SISTER_PANIC_D
 
+	def manual_update_associated_sprite(self, dt, speed=None):
+
+		if speed is None:
+			speed = self.speed
+
+		self.associated_sprite.center_x += self.associated_sprite.change_x*dt*speed
+		self.associated_sprite.center_y += self.associated_sprite.change_y*dt*speed
+
+	def update_physics(self):
+
+		self.associated_physics_engine.update()
+
 
 def distance(e1, e2):
 	return math.sqrt((e1.x - e2.x)**2 + (e1.y - e2.y)**2)
@@ -134,16 +161,18 @@ def distance(e1, e2):
 class GameEngine:
 
 
-	def __init__(self, brother: MainEntity, sister: MainEntity):
+	def __init__(self, brother: MainEntity, sister: MainEntity, entities):
 
 		self.brother = brother
 		self.sister = sister
+		self.entities = entities # {key: MainEntity}
 
 	@staticmethod
 	def new(brother_x=0, brother_y=0, sister_x=0, sister_y=0):
 		return GameEngine(
 			brother=MainEntity.new(brother_x, brother_y, MainEntity.BROTHER),
 			sister=MainEntity.new(sister_x, sister_y, MainEntity.SISTER),
+			entities={},
 		)
 
 	def update_brother_berserk(self):
@@ -168,6 +197,12 @@ class GameEngine:
 		self.sister.y = sister.center_y
 		self.sister.dx = sister.change_x
 		self.sister.dy = sister.change_y
+
+		for e in self.entities.values():
+			e.x = e.associated_sprite.center_x
+			e.y = e.associated_sprite.center_y
+			e.dx = e.associated_sprite.change_x
+			e.dy = e.associated_sprite.change_y
 
 		for e in (self.brother, self.sister):
 			if e.associated_exclamation is not None:
@@ -200,3 +235,11 @@ class GameEngine:
 		brother.change_y = self.brother.computed_dy(dt)
 		sister.change_x = self.sister.computed_dx(dt)
 		sister.change_y = self.sister.computed_dy(dt)
+
+		for e in self.entities.values():
+
+			e.associated_sprite.change_x = e.computed_dx(dt)
+			e.associated_sprite.change_y = e.computed_dy(dt)
+
+			#e.manual_update_associated_sprite(dt)
+			e.update_physics()

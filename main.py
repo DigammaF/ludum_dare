@@ -17,12 +17,16 @@ import engine, pathfinder
 
 from engine import BROTHER_SPEED, SISTER_SPEED
 from animations import EntitySprite
+from levels import LevelOne
 
 
 FOG_OF_WAR_REFRESH_TTL = 10
-FOG_OF_WAR_ENABLED = bool(0)
+FOG_OF_WAR_ENABLED = False
 
-DOOR_INTERACTION_RANGE = 150
+CLIP = True
+CAMERA_ATTACHED = True
+
+DOOR_INTERACTION_RANGE = 100
 
 
 SCREEN_WIDTH = 1000
@@ -39,6 +43,7 @@ GLASS_SCALING = 100/20
 SPAWN_SCALING = 100/20
 PATHFINDER_SCALING = 100/20
 DOORS_SCALING = 100/20
+PROPS_SCALING = 100/20
 
 
 ASSETS_PATH = pathlib.Path("assets")
@@ -64,6 +69,10 @@ PLAY_MAP = HOUSE_MAP_PATH
 
 DEBUG_ROUTE = None
 
+LEVELS = {
+	0: (HOUSE_MAP_PATH, LevelOne),
+}
+
 
 INVISIBLE = 0
 VISIBLE = 255
@@ -84,6 +93,8 @@ class Controls:
 	COME_HERE = arcade.key.C
 
 	DEBUG_PRINT_COORD = arcade.key.P
+	DEBUG_NO_CLIP = arcade.key.M
+	DEBUG_CAMERA_DETACH = arcade.key.O
 
 
 	@staticmethod
@@ -93,10 +104,7 @@ class Controls:
 		keyboard[Controls.DOWN] = False
 		keyboard[Controls.LEFT] = False
 		keyboard[Controls.RIGHT] = False
-		keyboard[Controls.SWITCH_CONTROL] = False
 		keyboard[Controls.TAKE_WEAPON] = False
-		keyboard[Controls.COME_HERE] = False
-		keyboard[Controls.DOOR] = False
 
 
 class Bag:
@@ -106,12 +114,45 @@ class Bag:
 	route = None
 
 
+class Camera:
+
+
+	def __init__(self, x, y, speed=800):
+
+		self.x = x
+		self.y = y
+
+		self.dx = 0
+		self.dy = 0
+
+		self.speed = speed
+
+	def set_command(self, x, y):
+
+		self.dx = x
+		self.dy = y
+
+	def follow(self, obj):
+
+		self.x = obj.x
+		self.y = obj.y
+
+	def update(self, dt):
+
+		self.x += self.dx*self.speed*dt
+		self.y += self.dy*self.speed*dt
+
+
 class Game(arcade.Window):
 
 
 	TILE_SIZE = 100
 
 	ORDER_COME_HERE = 0
+
+	ENTITY_KIND_BROTHER = engine.MainEntity.BROTHER
+	ENTITY_KIND_SISTER = engine.MainEntity.SISTER
+	ENTITY_KIND_SOLDIER = engine.MainEntity.SOLDIER
 
 
 	def __init__(self):
@@ -124,6 +165,7 @@ class Game(arcade.Window):
 		self.grounds = None
 		self.glasses = None
 		self.entities = None
+		self.props = None
 
 		self.doors = None
 		self.doors_storage = []
@@ -166,6 +208,26 @@ class Game(arcade.Window):
 
 		self.pf_tree = None
 		self.index_pool = None
+
+		self.tasks = {} # {int: Task}
+
+		self.camera = None
+
+		self.level_instance = None
+
+		self.task_keys = None # list
+
+	def add_task(self, task):
+
+		key = self.index_pool.create()
+		self.tasks[key] = task
+		self.task_keys.append(key)
+
+	def rem_task(self, key):
+
+		del self.tasks[key]
+		self.index_pool.destroy(key)
+		del self.task_keys[self.task_keys.index(key)]
 
 	def can_see(self, x, y, dest_x, dest_y):
 
@@ -246,6 +308,20 @@ class Game(arcade.Window):
 		if symbol == Controls.DEBUG_PRINT_COORD:
 			print(f"{int(self.controlled.x)};{int(self.controlled.y)}")
 
+		if symbol == Controls.DEBUG_NO_CLIP:
+
+			global CLIP
+			CLIP = not CLIP
+
+			print(f"No clip : {not CLIP}")
+
+		if symbol == Controls.DEBUG_CAMERA_DETACH:
+
+			global CAMERA_ATTACHED
+			CAMERA_ATTACHED = not CAMERA_ATTACHED
+
+			print(f"Camera attached : {CAMERA_ATTACHED}")
+
 	def on_key_release(self, symbol: int, modifiers: int):
 
 		self.keyboard[symbol] = False
@@ -257,13 +333,18 @@ class Game(arcade.Window):
 
 	def setup(self):
 
+		level = 0
+
+		data = LEVELS[level]
+
 		#self.walls = arcade.SpriteList()
 		#self.weapons = arcade.SpriteList()
 		self.exclamations = arcade.SpriteList()
 		self.fog_of_war = arcade.SpriteList()
 		self.entities = arcade.SpriteList()
 
-		map = arcade.tilemap.read_tmx(str(PLAY_MAP))
+		map = arcade.tilemap.read_tmx(str(data[0]))
+		self.map = map
 		self.walls = arcade.tilemap.process_layer(map, "walls", WALL_SCALING)
 		self.weapons = arcade.tilemap.process_layer(map, "weapons", WEAPON_SCALING)
 		self.grounds = arcade.tilemap.process_layer(map, "ground", GROUND_SCALING)
@@ -272,6 +353,10 @@ class Game(arcade.Window):
 		self.pf_data = arcade.tilemap.process_layer(map, "pathfinder", PATHFINDER_SCALING)
 		self.doors = arcade.tilemap.process_layer(map, "doors", DOORS_SCALING)
 		self.open_doors = arcade.tilemap.process_layer(map, "open_doors", DOORS_SCALING)
+		self.props = arcade.tilemap.process_layer(map, "props", PROPS_SCALING)
+
+		if self.props is None:
+			self.props = arcade.SpriteList()
 
 		self.doors_storage = self.doors[:]
 		self.open_doors_storage = self.open_doors[:]
@@ -343,12 +428,20 @@ class Game(arcade.Window):
 
 		self.controlled = self.engine.brother
 
+		self.camera = Camera(0, 0)
+		self.camera.follow(self.controlled)
+
 		if FOG_OF_WAR_ENABLED:
 			for sprite in chain(self.grounds, self.entities, self.walls, self.glasses, self.doors, self.open_doors, self.weapons):
 				sprite._set_alpha(INVISIBLE)
 
 		self.pf_tree = pathfinder.Tree.generate(self)
 		self.index_pool = pathfinder.IndexPool.new()
+
+		self.task_keys = []
+
+		self.level_instance = data[1]()
+		self.level_instance.setup(self)
 
 	def draw_out_level_indicators(self):
 
@@ -436,6 +529,9 @@ class Game(arcade.Window):
 
 		arcade.start_render()
 
+		if CAMERA_ATTACHED:
+			self.camera.follow(self.controlled)
+
 		self.grounds.draw()
 
 		self.draw_out_level_indicators()
@@ -444,6 +540,7 @@ class Game(arcade.Window):
 		self.glasses.draw()
 		self.doors.draw()
 		self.open_doors.draw()
+		self.weapons.draw()
 
 		for entity in self.entities:
 			entity.texture.draw_scaled(
@@ -516,7 +613,12 @@ class Game(arcade.Window):
 		if self.keyboard[Controls.UP]: command_y += 1
 		if self.keyboard[Controls.DOWN]: command_y -= 1
 
-		self.controlled.set_command(command_x, command_y, BROTHER_SPEED)
+		if CAMERA_ATTACHED:
+			self.controlled.set_command(command_x, command_y, BROTHER_SPEED)
+
+		else:
+			self.camera.set_command(command_x, command_y)
+
 		self.controlled.command_take_weapon = self.keyboard[Controls.TAKE_WEAPON]
 
 	def update_fog_of_war(self):
@@ -529,32 +631,60 @@ class Game(arcade.Window):
 
 			self.refresh_fog_of_war()
 
+	def update_tasks(self, dt):
+
+		to_be_rem = []
+
+		for key in self.task_keys:
+
+			self.tasks[key].update(dt, self)
+
+			if not self.tasks[key].is_alive(self):
+				to_be_rem.append(key)
+
+		for key in to_be_rem:
+			self.rem_task(key)
+
 	def on_update(self, delta_time: float):
+
+		self.camera.update(delta_time)
 
 		self.update_order()
 
 		self.update_checking_keyboard()
 
-		self.brother_physics_engine.update()
-		self.brother_glass_physics_engine.update()
-		self.brother_doors_physics_engine.update()
-		self.sister_physics_engine.update()
-		self.sister_glass_physics_engine.update()
-		self.sister_doors_physics_engine.update()
+		self.update_tasks(delta_time)
+
+		if CLIP:
+
+			self.brother_physics_engine.update()
+			self.brother_glass_physics_engine.update()
+			self.brother_doors_physics_engine.update()
+			self.sister_physics_engine.update()
+			self.sister_glass_physics_engine.update()
+			self.sister_doors_physics_engine.update()
+
+		else:
+			self.brother.center_x += self.brother.change_x
+			self.brother.center_y += self.brother.change_y
+			self.sister.center_x += self.sister.change_x
+			self.sister.center_y += self.sister.change_y
 
 		self.engine.update(delta_time, self)
 
 		if FOG_OF_WAR_ENABLED: self.update_fog_of_war()
 
 		arcade.set_viewport(
-			int(self.controlled.x - SCREEN_WIDTH/2),
-			int(self.controlled.x + SCREEN_WIDTH/2),
-			int(self.controlled.y - SCREEN_HEIGHT/2),
-			int(self.controlled.y + SCREEN_HEIGHT/2),
+			int(self.camera.x - SCREEN_WIDTH/2),
+			int(self.camera.x + SCREEN_WIDTH/2),
+			int(self.camera.y - SCREEN_HEIGHT/2),
+			int(self.camera.y + SCREEN_HEIGHT/2),
 		)
 
 		for entity in self.entities:
 			entity.update_animation(delta_time)
+
+		self.level_instance.update(delta_time)
 
 	def refresh_fog_of_war(self):
 
@@ -576,6 +706,40 @@ class Game(arcade.Window):
 				else:
 					sprite._set_alpha(INVISIBLE)
 
+	def player_sprite(self):
+		return [self.brother, self.sister][self.controlled is self.engine.sister]
+
+	def new_entity(self, x, y, kind):
+		return engine.MainEntity.new(x=x, y=y, kind=kind)
+
+	def new_solider_animated_sprite(self):
+		return EntitySprite(
+			running_right_file_scheme=str(SOLDIER_RUNNING_RIGHT_SCHEME),
+			running_right_amount=5,
+			running_right_pace=0.5,
+			idle_right_file_scheme=str(SOLDIER_IDLE_SCHEME),
+			idle_right_amount=2,
+			idle_pace=2,
+			m_scale=ENTITY_SCALING,
+		)
+
+	def add_entity(self, entity, sprite):
+
+		key = self.index_pool.create()
+		self.engine.entities[key] = entity
+		entity.associated_sprite = sprite
+		entity.associated_physics_engine = arcade.PhysicsEngineSimple(sprite, arcade.SpriteList())
+		sprite.center_x = entity.x
+		sprite.center_y = entity.y
+		self.entities.append(sprite)
+		return key
+
+	def rem_entity(self, key):
+
+		self.engine.entities[key].associated_sprite.remove_from_sprite_lists()
+		del self.engine.entities[key]
+		self.index_pool.destroy(key)
+
 
 def main():
 	window = Game()
@@ -590,4 +754,4 @@ if __name__ == "__main__":
 
 	ps = pstats.Stats(profile)
 	ps.dump_stats("perf_logs.txt")
-	ps.print_stats()
+	#ps.print_stats()

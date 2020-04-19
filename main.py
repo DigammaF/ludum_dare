@@ -83,6 +83,8 @@ class Controls:
 
 	COME_HERE = arcade.key.C
 
+	DEBUG_PRINT_COORD = arcade.key.P
+
 
 	@staticmethod
 	def fill_keyboard(keyboard):
@@ -241,6 +243,9 @@ class Game(arcade.Window):
 						self.doors.append(door)
 						break
 
+		if symbol == Controls.DEBUG_PRINT_COORD:
+			print(f"{int(self.controlled.x)};{int(self.controlled.y)}")
+
 	def on_key_release(self, symbol: int, modifiers: int):
 
 		self.keyboard[symbol] = False
@@ -296,8 +301,8 @@ class Game(arcade.Window):
 			running_right_file_scheme=str(BROTHER_RUNNING_RIGHT_SCHEME),
 			running_right_amount=5,
 			running_right_pace=0.5,
-			idle_file_scheme=str(BROTHER_IDLE_SCHEME),
-			idle_amount=2,
+			idle_right_file_scheme=str(BROTHER_IDLE_SCHEME),
+			idle_right_amount=2,
 			idle_pace=2,
 			m_scale=ENTITY_SCALING,
 		)
@@ -312,8 +317,8 @@ class Game(arcade.Window):
 			running_right_file_scheme=str(SISTER_RUNNING_RIGHT_SCHEME),
 			running_right_amount=5,
 			running_right_pace=0.5,
-			idle_file_scheme=str(SISTER_IDLE_SCHEME),
-			idle_amount=2,
+			idle_right_file_scheme=str(SISTER_IDLE_SCHEME),
+			idle_right_amount=2,
 			idle_pace=2,
 			m_scale=ENTITY_SCALING,
 		)

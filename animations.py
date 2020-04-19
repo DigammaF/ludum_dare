@@ -8,7 +8,7 @@ class EntitySprite(arcade.AnimatedTimeBasedSprite):
 
 	def __init__(self,
 				 running_right_file_scheme, running_right_amount,
-				 idle_file_scheme, idle_amount,
+				 idle_right_file_scheme, idle_right_amount,
 				 running_right_pace, idle_pace,
 				 m_scale,
 				 *args, **kwargs):
@@ -25,15 +25,20 @@ class EntitySprite(arcade.AnimatedTimeBasedSprite):
 			for i in range(1, running_right_amount + 1)
 		]
 
-		self.idle_textures = [
-			arcade.load_texture(idle_file_scheme.format(str(i)))
-			for i in range(1, idle_amount + 1)
+		self.idle_right_textures = [
+			arcade.load_texture(idle_right_file_scheme.format(str(i)))
+			for i in range(1, idle_right_amount + 1)
 		]
 
-		self.anim_played = self.idle_textures
+		self.idle_left_textures = [
+			arcade.load_texture(idle_right_file_scheme.format(str(i)), mirrored=True)
+			for i in range(1, idle_right_amount + 1)
+		]
+
+		self.anim_played = self.idle_right_textures
 		self.index = 0
 		self.time = 0.0
-		self.texture = self.idle_textures[0]
+		self.texture = self.idle_right_textures[0]
 
 		self.running = False
 
@@ -44,6 +49,7 @@ class EntitySprite(arcade.AnimatedTimeBasedSprite):
 		self.idle_t = 1
 
 		self.anim_t = self.idle_t
+		self.facing_right = True
 
 		self.paces = {
 			self.running_t: self.running_right_pace,
@@ -58,13 +64,16 @@ class EntitySprite(arcade.AnimatedTimeBasedSprite):
 
 		self.time += delta_time
 
+		if self.change_x != 0:
+			self.facing_right = self.change_x > 0
+
 		if self.running:
 			self.anim_t = self.running_t
-			self.anim_played = [self.running_right_textures, self.running_left_textures][self.change_x < 0]
+			self.anim_played = [self.running_left_textures, self.running_right_textures][self.facing_right]
 
 		else:
 			self.anim_t = self.idle_t
-			self.anim_played = self.idle_textures
+			self.anim_played = [self.idle_left_textures, self.idle_right_textures][self.facing_right]
 
 		if self.time > self.paces[self.anim_t] / len(self.anim_played):
 			self.time = 0

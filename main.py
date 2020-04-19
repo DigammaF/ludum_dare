@@ -70,7 +70,7 @@ class Controls:
 	RIGHT = arcade.key.D
 
 	SWITCH_CONTROL = arcade.key.A
-	TAKE_WEAPON = arcade.key.E
+	TAKE_WEAPON = arcade.key.F
 	DOOR = arcade.key.F
 
 	COME_HERE = arcade.key.C

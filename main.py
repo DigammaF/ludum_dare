@@ -95,6 +95,7 @@ INTRODUCTION = 9
 SPACE_TRANSITIONS = {
 	CREDITS: MAIN_MENU,
 	INTRODUCTION: 2,
+	MAIN_MENU: INTRODUCTION,
 }
 
 
@@ -337,6 +338,8 @@ class Game(arcade.Window):
 
 	def on_key_press(self, symbol: int, modifiers: int):
 
+		if not self.ready: return
+
 		if is_pure_menu(self.level):
 
 			if symbol == arcade.key.SPACE:
@@ -346,6 +349,11 @@ class Game(arcade.Window):
 					return
 
 				if self.level in SPACE_TRANSITIONS: self.setup(SPACE_TRANSITIONS[self.level])
+
+			if symbol == arcade.key.ENTER:
+
+				if self.level == MAIN_MENU:
+					self.setup(CREDITS)
 
 			return
 
@@ -401,6 +409,8 @@ class Game(arcade.Window):
 
 	def on_key_release(self, symbol: int, modifiers: int):
 
+		if not self.ready: return
+
 		if is_pure_menu(self.level): return
 
 		self.keyboard[symbol] = False
@@ -450,6 +460,8 @@ class Game(arcade.Window):
 
 	def setup(self, level):
 
+		self.ready = False
+
 		self.level = level
 
 		self.menu = arcade.SpriteList()
@@ -463,6 +475,8 @@ class Game(arcade.Window):
 				scale=0.3,
 			))
 
+			self.ready = True
+
 		if level == DEFEAT_GIRL:
 
 			self.menu.append(arcade.Sprite(
@@ -472,6 +486,8 @@ class Game(arcade.Window):
 				scale=0.3,
 			))
 
+			self.ready = True
+
 		if level == CREDITS:
 			self.menu.append(arcade.Sprite(
 				str(ASSETS_PATH / "Ecrans" / "Crédits.png"),
@@ -479,6 +495,8 @@ class Game(arcade.Window):
 				center_y=SCREEN_HEIGHT // 2,
 				scale=0.3,
 			))
+
+			self.ready = True
 
 		if level == INTRODUCTION:
 			self.menu.append(arcade.Sprite(
@@ -488,7 +506,10 @@ class Game(arcade.Window):
 				scale=0.3,
 			))
 
+			self.ready = True
+
 		if level == MAIN_MENU:
+
 			self.menu.append(arcade.Sprite(
 				str(ASSETS_PATH / "Ecrans" / "Ecran titre.png"),
 				center_x=SCREEN_WIDTH // 2,
@@ -496,7 +517,11 @@ class Game(arcade.Window):
 				scale=0.3,
 			))
 
+			self.ready = True
+
 		if is_pure_menu(self.level): return
+
+		print("Setting up ...")
 
 		self.latest_play_level = level
 
@@ -512,19 +537,29 @@ class Game(arcade.Window):
 		map = arcade.tilemap.read_tmx(str(data[0]))
 		self.map = map
 		self.walls = arcade.tilemap.process_layer(map, "walls", WALL_SCALING)
+		print("Walls")
 		self.sticks = arcade.tilemap.process_layer(map, "sticks", WEAPON_SCALING)
+		print("Sticks")
 		self.axes = arcade.tilemap.process_layer(map, "axes", WEAPON_SCALING)
+		print("Axes")
 		self.grounds = arcade.tilemap.process_layer(map, "ground", GROUND_SCALING)
-		self.glasses = arcade.tilemap.process_layer(map, "glass", GLASS_SCALING)
+		print("Grounds")
+		self.glasses = arcade.tilemap.process_layer(map, "glasses", GLASS_SCALING)
+		print("Glasses")
 		self.spawn = arcade.tilemap.process_layer(map, "spawn", SPAWN_SCALING)
+		print("Spawn")
 		self.pf_data = arcade.tilemap.process_layer(map, "pathfinder", PATHFINDER_SCALING)
+		print("PF data")
 		self.doors = arcade.tilemap.process_layer(map, "doors", DOORS_SCALING)
+		print("Doors")
 		self.open_doors = arcade.tilemap.process_layer(map, "open_doors", DOORS_SCALING)
+		print("Open doors")
 		self.props = arcade.tilemap.process_layer(map, "props", PROPS_SCALING)
+		print("Props")
 
-		make_static(self.walls)
-		make_static(self.grounds); make_use_spatial_hash(self.grounds)
-		make_static(self.pf_data); make_use_spatial_hash(self.pf_data)
+		#make_static(self.walls)
+		#make_static(self.grounds); make_use_spatial_hash(self.grounds)
+		#make_static(self.pf_data); make_use_spatial_hash(self.pf_data)
 
 		self.doors_storage = self.doors[:]
 		self.open_doors_storage = self.open_doors[:]
@@ -633,6 +668,8 @@ class Game(arcade.Window):
 		self.camera = Camera(0, 0)
 		self.camera.follow(self.controlled)
 
+		print("Camera set up")
+
 		if FOG_OF_WAR_ENABLED:
 			for sprite in chain(self.grounds, self.entities, self.walls, self.glasses, self.doors, self.open_doors, self.sticks, self.axes):
 				sprite._set_alpha(INVISIBLE)
@@ -651,6 +688,8 @@ class Game(arcade.Window):
 								 self.debug_shot()
 								 ))
 		"""
+
+		self.ready = True
 
 	def debug_shot(self):
 
@@ -744,11 +783,14 @@ class Game(arcade.Window):
 
 	def on_draw(self):
 
+		if not self.ready: return
+
 		arcade.start_render()
 
 		self.menu.draw()
 
-		if is_pure_menu(self.level): return
+		if is_pure_menu(self.level):
+			return
 
 		if CAMERA_ATTACHED:
 			self.camera.follow(self.controlled)
@@ -946,7 +988,10 @@ class Game(arcade.Window):
 
 	def on_update(self, delta_time: float):
 
-		if is_pure_menu(self.level): return
+		if not self.ready: return
+
+		if is_pure_menu(self.level):
+			return
 
 		self.camera.update(delta_time)
 

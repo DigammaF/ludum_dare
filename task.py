@@ -398,3 +398,39 @@ class Die(Task):
 
 		self.entity.die()
 		return False
+
+
+class Detection(Task):
+
+
+	def __init__(self, sprite, time, callback):
+
+		self.sprite = sprite
+
+		self.pre_triggered = False
+		self.triggered = False
+
+		self.time = time
+		self.callback = callback
+
+	def update(self, dt, game):
+
+		if arcade.are_polygons_intersecting(self.sprite.points, game.brother.points)\
+			or arcade.are_polygons_intersecting(self.sprite.points, game.sister.points):
+			self.pre_triggered = True
+
+		if self.pre_triggered:
+
+			self.time -= dt
+
+			if self.time <= 0:
+				self.triggered = True
+
+	def is_alive(self, game):
+
+		if self.triggered:
+
+			self.callback()
+			return False
+
+		return True

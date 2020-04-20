@@ -20,7 +20,7 @@ class Level:
 		pass
 
 
-class LevelOne(Level):
+class LevelOneOld(Level):
 
 
 	STATE_PATROL = 0
@@ -68,7 +68,7 @@ class LevelOne(Level):
 		sprites = arcade.tilemap.process_layer(game.map, "detect", GLOBAL_SCALE)
 		sprite = sprites[0]
 
-		game.add_task(LevelOne.Detection(
+		game.add_task(LevelOneOld.Detection(
 			sprite=sprite,
 			time=10,
 			callback=lambda s=self: s.player_house_exit(),
@@ -121,7 +121,7 @@ class LevelOne(Level):
 
 			entity = self.game.engine.entities[key]
 
-			entity.state = LevelOne.STATE_PATROL
+			entity.state = LevelOneOld.STATE_PATROL
 			entity.reload = SOLDIER_RELOAD
 
 			self.game.add_task(task.After(1, lambda self=self, entity=entity:
@@ -232,6 +232,11 @@ class LevelOne(Level):
 			lambda self=self, soldier=soldier:
 			self.take_soldier_on_patrol(soldier, self.game)
 		))
+
+
+class LevelOne(Level):
+
+	pass
 
 
 class LevelTwo(Level):

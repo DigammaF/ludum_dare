@@ -269,6 +269,22 @@ class AttackMove(Task):
 		return self.keep_alive
 
 
+class Hunt(Task):
+
+
+	def __init__(self, hunter):
+
+		self.hunter = hunter
+
+	def update(self, dt, game):
+
+		for e in (game.engine.brother, game.engine.sister):
+			game.try_shoot(self.hunter, e)
+
+	def is_alive(self, game):
+		return True
+
+
 class GuideTo(Task):
 
 

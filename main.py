@@ -31,6 +31,8 @@ CAMERA_ATTACHED = True
 #DOOR_INTERACTION_RANGE = 100
 DOOR_INTERACTION_RANGE = 30*GLOBAL_SCALE
 
+SOLDIER_RELOAD = 3
+
 
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 650
@@ -85,6 +87,19 @@ LEVELS = {
 
 MAIN_MENU = 0
 CREDITS = 1
+DEFEAT_BOY = 6
+VICTORY = 7
+DEFEAT_GIRL = 8
+INTRODUCTION = 9
+
+SPACE_TRANSITIONS = {
+	CREDITS: MAIN_MENU,
+	INTRODUCTION: 2,
+}
+
+
+def is_pure_menu(level):
+	return level in (MAIN_MENU, CREDITS, DEFEAT_BOY, DEFEAT_GIRL, VICTORY, INTRODUCTION)
 
 
 INVISIBLE = 0
@@ -248,6 +263,19 @@ class Game(arcade.Window):
 
 		self.current_order_task_key = None
 
+		self.latest_play_level = 2
+
+	def try_shoot(self, soldier, target):
+
+		if self.xcan_see(soldier, target):
+
+			if soldier.reload > 0:
+				return
+
+			self.add_task(task.SoldierShot(target.x, target.y))
+
+			soldier.reload = SOLDIER_RELOAD
+
 	def create_route_points(self, x, y, x_dst, y_dst):
 		return pathfinder.create_route_points(x, y, x_dst, y_dst, self.index_pool, self)
 
@@ -309,6 +337,18 @@ class Game(arcade.Window):
 
 	def on_key_press(self, symbol: int, modifiers: int):
 
+		if is_pure_menu(self.level):
+
+			if symbol == arcade.key.SPACE:
+
+				if self.level in (DEFEAT_GIRL, DEFEAT_BOY):
+					self.setup(self.latest_play_level)
+					return
+
+				if self.level in SPACE_TRANSITIONS: self.setup(SPACE_TRANSITIONS[self.level])
+
+			return
+
 		self.keyboard[symbol] = True
 
 		if symbol == Controls.SWITCH_CONTROL:
@@ -361,6 +401,8 @@ class Game(arcade.Window):
 
 	def on_key_release(self, symbol: int, modifiers: int):
 
+		if is_pure_menu(self.level): return
+
 		self.keyboard[symbol] = False
 
 	def on_mouse_motion(self, x: float, y: float, dx: float, dy: float):
@@ -406,12 +448,59 @@ class Game(arcade.Window):
 					self.doors.append(door)
 					break
 
-	def setup(self):
+	def setup(self, level):
 
-		level = 0
+		self.level = level
 
-		#data = LEVELS[level]
-		data = (ASSETS_PATH / "house.tmx", LevelOne)
+		self.menu = arcade.SpriteList()
+
+		if level == DEFEAT_BOY:
+
+			self.menu.append(arcade.Sprite(
+				str(ASSETS_PATH / "Ecrans" / "Ecran de mort garcon.png"),
+				center_x=SCREEN_WIDTH//2,
+				center_y=SCREEN_HEIGHT//2,
+				scale=0.3,
+			))
+
+		if level == DEFEAT_GIRL:
+
+			self.menu.append(arcade.Sprite(
+				str(ASSETS_PATH / "Ecrans" / "Ecran de mort fille.png"),
+				center_x=SCREEN_WIDTH//2,
+				center_y=SCREEN_HEIGHT//2,
+				scale=0.3,
+			))
+
+		if level == CREDITS:
+			self.menu.append(arcade.Sprite(
+				str(ASSETS_PATH / "Ecrans" / "Crédits.png"),
+				center_x=SCREEN_WIDTH // 2,
+				center_y=SCREEN_HEIGHT // 2,
+				scale=0.3,
+			))
+
+		if level == INTRODUCTION:
+			self.menu.append(arcade.Sprite(
+				str(ASSETS_PATH / "Ecrans" / "Introduction.png"),
+				center_x=SCREEN_WIDTH // 2,
+				center_y=SCREEN_HEIGHT // 2,
+				scale=0.3,
+			))
+
+		if level == MAIN_MENU:
+			self.menu.append(arcade.Sprite(
+				str(ASSETS_PATH / "Ecrans" / "Ecran titre.png"),
+				center_x=SCREEN_WIDTH // 2,
+				center_y=SCREEN_HEIGHT // 2,
+				scale=0.3,
+			))
+
+		if is_pure_menu(self.level): return
+
+		self.latest_play_level = level
+
+		data = LEVELS[level]
 
 		#self.walls = arcade.SpriteList()
 		#self.weapons = arcade.SpriteList()
@@ -657,6 +746,10 @@ class Game(arcade.Window):
 
 		arcade.start_render()
 
+		self.menu.draw()
+
+		if is_pure_menu(self.level): return
+
 		if CAMERA_ATTACHED:
 			self.camera.follow(self.controlled)
 
@@ -853,6 +946,8 @@ class Game(arcade.Window):
 
 	def on_update(self, delta_time: float):
 
+		if is_pure_menu(self.level): return
+
 		self.camera.update(delta_time)
 
 		self.deal_with_out_level_and_order()
@@ -962,7 +1057,7 @@ class Game(arcade.Window):
 
 def main():
 	window = Game()
-	window.setup()
+	window.setup(MAIN_MENU)
 	arcade.run()
 
 

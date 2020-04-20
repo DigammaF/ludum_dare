@@ -19,6 +19,10 @@ BROTHER_SPEED = 20*GLOBAL_SCALE
 SISTER_SPEED = 0.9*BROTHER_SPEED
 SOLDIER_SPEED = 1.1*BROTHER_SPEED
 
+S_DEMON_TIME = 3
+DEMON_TIME = 6
+DEMON_DECAY_TIME = 6
+
 
 def rotated_angle(x, y, r):
 
@@ -42,8 +46,9 @@ class MainEntity:
 	SOLDIER = 2
 
 
-	def __init__(self, x, y, dx, dy, command_x, command_y, level, has_weapon,
-				 command_take_weapon, kind, speed=None, dead=False, health=100):
+	def __init__(self, x, y, dx, dy, command_x, command_y, level,
+				 command_take_weapon, kind, speed=None, dead=False, health=100,
+				 has_stick=False, has_axe=False):
 
 		self.x = x
 		self.y = y
@@ -52,7 +57,8 @@ class MainEntity:
 		self.command_x = command_x
 		self.command_y = command_y
 		self.level = level # 0-1
-		self.has_weapon = has_weapon
+		self.has_stick = has_stick
+		self.has_axe = has_axe
 		self.command_take_weapon = command_take_weapon
 		self.kind = kind
 
@@ -70,6 +76,23 @@ class MainEntity:
 		self.dead = dead
 		self.health = health
 
+		self.demon_time = 0
+		self.demon_decay_time = DEMON_DECAY_TIME
+
+		self.demon_state = None
+
+	@property
+	def weapon_t(self):
+
+		if self.has_stick:
+			return "stick"
+
+		elif self.has_axe:
+			return "axe"
+
+		else:
+			return None
+
 	@staticmethod
 	def new(x, y, kind):
 		return MainEntity(
@@ -80,7 +103,6 @@ class MainEntity:
 			command_x=0,
 			command_y=0,
 			level=0,
-			has_weapon=False,
 			command_take_weapon=False,
 			kind=kind,
 		)
@@ -169,6 +191,29 @@ class MainEntity:
 		self.dead = True
 		self.stop_motion_command()
 
+	def update_berserk(self, dt):
+
+		self.demon_time += dt
+
+		if self.demon_time > S_DEMON_TIME:
+
+			self.demon_state = 1
+
+		if self.demon_time > DEMON_TIME:
+
+			self.demon_state = 2
+
+			self.demon_decay_time -= dt
+
+			if self.demon_decay_time < 0:
+				self.level = 0
+
+	def reset_berserk(self):
+
+		self.demon_state = None
+		self.demon_time = 0
+		self.demon_decay_time = DEMON_DECAY_TIME
+
 	def mood_update(self, dt, d):
 
 		if self.dead: return
@@ -190,6 +235,12 @@ class MainEntity:
 
 				if max(self.level, 0.1) > random.random():
 					self.level += 1
+
+			if self.is_out_leveled:
+				self.update_berserk(dt)
+
+			else:
+				self.reset_berserk()
 
 		elif self.kind == MainEntity.SISTER:
 
@@ -278,9 +329,6 @@ class GameEngine:
 				w.remove_from_sprite_lists()
 				self.brother.has_weapon = True
 				break
-
-		if self.brother.is_out_leveled:
-			self.update_brother_berserk()
 
 		d = distance(self.brother, self.sister)
 

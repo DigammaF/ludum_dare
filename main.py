@@ -304,9 +304,10 @@ class Game(arcade.Window):
 
 		if symbol == Controls.SWITCH_CONTROL:
 
-			if self.current_order == Game.ORDER_COME_HERE:
-				self.current_order = None
-				self.current_order_data = None
+			if self.current_order_task_key is not None:
+
+				self.tasks[self.current_order_task_key].quit()
+				self.current_order_task_key = None
 
 			self.controlled.stop_commands()
 			self.controlled = [self.engine.brother, self.engine.sister][self.controlled is self.engine.brother]
@@ -448,6 +449,9 @@ class Game(arcade.Window):
 
 		#self.brother = arcade.Sprite(str(BROTHER_SPRITE_PATH), ENTITY_SCALING)
 
+		demonics = ASSETS_PATH / "Démonique"
+		demon_pace = 2
+
 		self.brother = EntitySprite(
 			running_right_file_scheme=str(BROTHER_RUNNING_RIGHT_SCHEME),
 			running_right_amount=5,
@@ -460,6 +464,19 @@ class Game(arcade.Window):
 			dying_right_pace=4,
 			m_scale=ENTITY_SCALING,
 			scale=ENTITY_SCALING,
+			kind="brother",
+			running_right_s_demon_scheme=str(demonics / "Semi démon {}.png"),
+			running_right_s_demon_amount=5,
+			running_right_s_demon_pace=demon_pace,
+			running_right_demon_scheme=str(demonics / "Démon {}.png"),
+			running_right_demon_amount=5,
+			running_right_demon_pace=demon_pace,
+			running_right_demon_stick_scheme=str(demonics / "Démon avec bâton {}.png"),
+			running_right_demon_stick_amount=5,
+			running_right_demon_stick_pace=demon_pace,
+			running_right_demon_axe_scheme=str(demonics / "Démon avec hache {}.png"),
+			running_right_demon_axe_amount=5,
+			running_right_demon_axe_pace=demon_pace,
 		)
 
 		self.brother.center_x = spawn_x
@@ -840,6 +857,11 @@ class Game(arcade.Window):
 
 		for entity in self.entities:
 			entity.update_animation(delta_time)
+
+		#self.brother.update_animation(delta_time, self.engine.brother.demon_state, self.engine.brother.weapon_t)
+
+		self.brother.demon_state = self.engine.brother.demon_state
+		self.brother.weapon = self.engine.brother.weapon_t
 
 		if self.current_order_task_key not in self.tasks:
 			self.current_order_task_key = None

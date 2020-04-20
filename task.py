@@ -111,6 +111,8 @@ class XGuideTo(Task):
 
 		self.callback = callback
 
+		self.last_created_motion_task_key = None
+
 	def setup(self, game):
 
 		self.route_points, self.key = game.create_route_points(
@@ -130,6 +132,7 @@ class XGuideTo(Task):
 
 	def quit(self):
 
+		self.entity.stop_motion_command()
 		self.game.pf_tree.destroy_route(self.key)
 		self.keep_alive = False
 		if self.callback is not None:

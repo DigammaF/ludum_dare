@@ -99,7 +99,7 @@ class ShortAnimation(Task):
 class XGuideTo(Task):
 
 
-	def __init__(self, entity, x, y):
+	def __init__(self, entity, x, y, callback=None):
 
 		self.entity = entity
 		self.x = x
@@ -108,6 +108,8 @@ class XGuideTo(Task):
 		self.route_points = None
 		self.key = None
 		self.keep_alive = True
+
+		self.callback = callback
 
 	def setup(self, game):
 
@@ -126,11 +128,17 @@ class XGuideTo(Task):
 
 		self.follow_path()
 
+	def quit(self):
+
+		self.game.pf_tree.destroy_route(self.key)
+		self.keep_alive = False
+		if self.callback is not None:
+			self.callback()
+
 	def follow_path(self):
 
 		if not self.route_points:
-			self.game.pf_tree.destroy_route(self.key)
-			self.keep_alive = False
+			self.quit()
 			return
 
 		ngoal = self.route_points[0]

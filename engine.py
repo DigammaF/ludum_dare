@@ -14,6 +14,8 @@ AXE_DAMAGE = 40
 ATTACK_RANGE = 40*GLOBAL_SCALE
 HEALTH_DISPLAY_TIME = 4
 
+FOLLOW_RANGE = 100*GLOBAL_SCALE
+
 BROTHER_BERSERK_DECREASE_RANGE = 80*GLOBAL_SCALE
 BROTHER_BERSERK_INCREASE_RANGE = 40*GLOBAL_SCALE
 BROTHER_BERSERK_D = 0.1
@@ -98,6 +100,8 @@ class MainEntity:
 
 		self.pick_weapon_task = None
 		self.attack_task = None
+
+		self.panic_task = None
 
 	def take_damage(self, d):
 
@@ -407,6 +411,20 @@ class MainEntity:
 
 			if d < SISTER_PANIC_DECREASE_RANGE:
 				self.level -= dt*SISTER_PANIC_D
+
+			if d > FOLLOW_RANGE:
+
+				print("Following")
+
+				if self.panic_task is None:
+					self.panic_task = task.PermaFollow(follower=game.engine.sister, followed=game.engine.brother, stop_when=lambda :False)
+					game.add_task(self.panic_task)
+
+			else:
+
+				if self.panic_task is not None:
+					self.panic_task.quit()
+					self.panic_task = None
 
 	def manual_update_associated_sprite(self, dt, speed=None):
 

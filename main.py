@@ -18,7 +18,7 @@ import engine, pathfinder, task
 
 from engine import BROTHER_SPEED, SISTER_SPEED
 from animations import EntitySprite
-from levels import LevelOne
+from levels import LevelOne, LevelTwo, LevelThree, LevelFour
 from scale import GLOBAL_SCALE
 
 
@@ -77,8 +77,14 @@ PLAY_MAP = HOUSE_MAP_PATH
 DEBUG_ROUTE = None
 
 LEVELS = {
-	0: (HOUSE_MAP_PATH, LevelOne),
+	2: (ASSETS_PATH / "Jardin.tmx", LevelOne),
+	3: (ASSETS_PATH / "Moulin.tmx", LevelTwo),
+	4: (ASSETS_PATH / "Cimetierre.tmx", LevelThree),
+	5: (ASSETS_PATH / "Eglise.tmx", LevelFour),
 }
+
+MAIN_MENU = 0
+CREDITS = 1
 
 
 INVISIBLE = 0
@@ -404,7 +410,8 @@ class Game(arcade.Window):
 
 		level = 0
 
-		data = LEVELS[level]
+		#data = LEVELS[level]
+		data = (ASSETS_PATH / "house.tmx", LevelOne)
 
 		#self.walls = arcade.SpriteList()
 		#self.weapons = arcade.SpriteList()

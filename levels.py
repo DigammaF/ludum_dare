@@ -232,3 +232,18 @@ class LevelOne(Level):
 			lambda self=self, soldier=soldier:
 			self.take_soldier_on_patrol(soldier, self.game)
 		))
+
+
+class LevelTwo(Level):
+
+	pass
+
+
+class LevelThree(Level):
+
+	pass
+
+
+class LevelFour(Level):
+
+	pass

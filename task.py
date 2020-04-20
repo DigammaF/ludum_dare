@@ -96,6 +96,12 @@ class ShortAnimation(Task):
 		return True
 
 
+def if_exe(cond, f):
+
+	if cond():
+		f()
+
+
 class XGuideTo(Task):
 
 
@@ -135,8 +141,17 @@ class XGuideTo(Task):
 		self.entity.stop_motion_command()
 		self.game.pf_tree.destroy_route(self.key)
 		self.keep_alive = False
-		if self.callback is not None:
-			self.callback()
+
+	def update(self, dt, game):
+
+		r = arcade.get_closest_sprite(self.entity.associated_sprite, game.doors)
+
+		if r is not None:
+
+			d = r[1]
+
+			if d <= game.DOOR_INTERACTION_RANGE:
+				game.entity_switch_door(self.entity)
 
 	def follow_path(self):
 
@@ -144,14 +159,17 @@ class XGuideTo(Task):
 			self.quit()
 			return
 
-		ngoal = self.route_points[0]
+		gogoal = self.route_points[0]
 		del self.route_points[0]
 
 		self.game.add_task(GuideTo(
 			main_entity=self.entity,
-			x=ngoal[0],
-			y=ngoal[1],
-			callback=lambda self=self: self.follow_path(),
+			x=gogoal[0],
+			y=gogoal[1],
+			callback=lambda self=self: if_exe(
+				lambda self=self: self.keep_alive,
+				self.follow_path
+			),
 		))
 
 	def is_alive(self, game):

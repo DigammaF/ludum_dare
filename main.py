@@ -171,6 +171,8 @@ class Game(arcade.Window):
 	ENTITY_KIND_SISTER = engine.MainEntity.SISTER
 	ENTITY_KIND_SOLDIER = engine.MainEntity.SOLDIER
 
+	DOOR_INTERACTION_RANGE = DOOR_INTERACTION_RANGE
+
 
 	def __init__(self):
 
@@ -327,41 +329,7 @@ class Game(arcade.Window):
 
 		if symbol == Controls.DOOR:
 
-			player_sprite = [self.brother, self.sister][self.controlled is self.engine.sister]
-
-			r = arcade.get_closest_sprite(player_sprite, self.doors)
-
-			if r is None:
-				nearest_closed_door, distance_c = None, float("inf")
-
-			else:
-				nearest_closed_door, distance_c = r
-
-			r = arcade.get_closest_sprite(player_sprite, self.open_doors)
-
-			if r is None:
-				nearest_open_door, distance_o = None, float("inf")
-
-			else:
-				nearest_open_door, distance_o = r
-
-			if distance_c < distance_o and distance_c < DOOR_INTERACTION_RANGE:
-
-				for door, open_door in self.door_pairing:
-
-					if door is nearest_closed_door:
-						nearest_closed_door.remove_from_sprite_lists()
-						self.open_doors.append(open_door)
-						break
-
-			if distance_o < distance_c and distance_o < DOOR_INTERACTION_RANGE:
-
-				for door, open_door in self.door_pairing:
-
-					if open_door is nearest_open_door:
-						nearest_open_door.remove_from_sprite_lists()
-						self.doors.append(door)
-						break
+			self.entity_switch_door(self.controlled)
 
 		if symbol == Controls.DEBUG_PRINT_COORD:
 			print(f"{int(self.controlled.x)};{int(self.controlled.y)}")
@@ -388,6 +356,44 @@ class Game(arcade.Window):
 
 		self.mouse_x = x
 		self.mouse_y = y
+
+	def entity_switch_door(self, entity):
+
+		player_sprite = entity.associated_sprite
+
+		r = arcade.get_closest_sprite(player_sprite, self.doors)
+
+		if r is None:
+			nearest_closed_door, distance_c = None, float("inf")
+
+		else:
+			nearest_closed_door, distance_c = r
+
+		r = arcade.get_closest_sprite(player_sprite, self.open_doors)
+
+		if r is None:
+			nearest_open_door, distance_o = None, float("inf")
+
+		else:
+			nearest_open_door, distance_o = r
+
+		if distance_c < distance_o and distance_c < DOOR_INTERACTION_RANGE:
+
+			for door, open_door in self.door_pairing:
+
+				if door is nearest_closed_door:
+					nearest_closed_door.remove_from_sprite_lists()
+					self.open_doors.append(open_door)
+					break
+
+		if distance_o < distance_c and distance_o < DOOR_INTERACTION_RANGE:
+
+			for door, open_door in self.door_pairing:
+
+				if open_door is nearest_open_door:
+					nearest_open_door.remove_from_sprite_lists()
+					self.doors.append(door)
+					break
 
 	def setup(self):
 
@@ -643,7 +649,7 @@ class Game(arcade.Window):
 
 		self.grounds.draw()
 
-		self.draw_out_level_indicators()
+		#self.draw_out_level_indicators()
 
 		self.walls.draw()
 		self.doors.draw()
@@ -677,7 +683,7 @@ class Game(arcade.Window):
 					scale=ENTITY_SCALING
 				)
 
-		self.engine.sister.draw_health()
+		self.engine.sister.try_health_display()
 
 		self.exclamations.draw()
 		self.weapons.draw()
@@ -689,8 +695,8 @@ class Game(arcade.Window):
 				scale=animator.m_scale,
 			)
 
-		for e in self.engine.entities.values():
-			e.draw_vision()
+		#for e in self.engine.entities.values():
+		#	e.draw_vision()
 
 		#self.draw_debug()
 		#self.draw_pf()

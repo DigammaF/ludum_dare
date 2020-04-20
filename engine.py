@@ -81,6 +81,8 @@ class MainEntity:
 
 		self.demon_state = None
 
+		self.display_health_for = 6
+
 	@property
 	def weapon_t(self):
 
@@ -214,7 +216,14 @@ class MainEntity:
 		self.demon_time = 0
 		self.demon_decay_time = DEMON_DECAY_TIME
 
+	def try_health_display(self):
+
+		if self.display_health_for > 0:
+			self.draw_health()
+
 	def mood_update(self, dt, d):
+
+		self.display_health_for = max(0, self.display_health_for - dt)
 
 		if self.dead: return
 

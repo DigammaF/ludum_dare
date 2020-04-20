@@ -220,9 +220,9 @@ class Game(arcade.Window):
 
 		self.fog_of_war_refresh_ttl = 0
 
-		self.current_order = None
-		self.currently_executed_order = None
-		self.current_order_data = None
+		#self.current_order = None
+		#self.currently_executed_order = None
+		#self.current_order_data = None
 
 		self.pf_tree = None
 		self.index_pool = None
@@ -237,12 +237,19 @@ class Game(arcade.Window):
 
 		self.glasses_y_cache = None
 
+		self.current_order_task_key = None
+
+	def create_route_points(self, x, y, x_dst, y_dst):
+		return pathfinder.create_route_points(x, y, x_dst, y_dst, self.index_pool, self)
+
 	def add_task(self, task):
 
 		key = self.index_pool.create()
 		self.tasks[key] = task
 		self.task_keys.append(key)
 		task.setup(self)
+
+		return key
 
 	def rem_task(self, key):
 
@@ -305,7 +312,17 @@ class Game(arcade.Window):
 			self.controlled = [self.engine.brother, self.engine.sister][self.controlled is self.engine.brother]
 
 		if symbol == Controls.COME_HERE:
-			self.current_order = Game.ORDER_COME_HERE
+
+			if self.current_order_task_key is None:
+
+				follower = [self.engine.brother, self.engine.sister][self.controlled is self.engine.brother]
+				followed = self.controlled
+
+				self.current_order_task_key = self.add_task(task.XGuideTo(
+					follower,
+					followed.x,
+					followed.y,
+				))
 
 		if symbol == Controls.DOOR:
 
@@ -659,7 +676,38 @@ class Game(arcade.Window):
 			e.draw_vision()
 
 		#self.draw_debug()
+		#self.draw_pf()
 
+	def draw_pf(self):
+
+		if self.current_order_task_key is None:
+			return
+
+		t = self.tasks[self.current_order_task_key]
+		key = t.key
+
+		for node in self.pf_tree.nodes:
+
+			h = node.safe.get(key, {"height": None})["height"]
+
+			arcade.draw_text(
+				text=str(h) + f" {node.rx};{node.ry}",
+				start_x=node.x - 20,
+				start_y=node.y,
+				color=arcade.csscolor.WHITE,
+				font_size=10,
+			)
+
+			for sub_node in node.links.values():
+				arcade.draw_line(
+					node.x,
+					node.y,
+					sub_node.x,
+					sub_node.y,
+					color=arcade.csscolor.WHITE,
+				)
+
+	"""
 	def update_order(self):
 
 		if self.current_order != self.currently_executed_order:
@@ -710,6 +758,8 @@ class Game(arcade.Window):
 			else:
 				follower.stop_commands()
 				self.current_order = None
+				
+	"""
 
 	def update_checking_keyboard(self):
 
@@ -756,7 +806,7 @@ class Game(arcade.Window):
 
 		self.camera.update(delta_time)
 
-		self.update_order()
+		#self.update_order()
 
 		self.update_checking_keyboard()
 
@@ -790,6 +840,9 @@ class Game(arcade.Window):
 
 		for entity in self.entities:
 			entity.update_animation(delta_time)
+
+		if self.current_order_task_key not in self.tasks:
+			self.current_order_task_key = None
 
 		self.level_instance.update(delta_time)
 

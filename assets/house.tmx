@@ -26,14 +26,14 @@
    eJzt0qENAEAIA0CWYv/VkK8+SEK4szWkJQIAAAAAAAAAAAAA4MnpA47r+v/lduMqv7+DnQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAbQpMeAE/
   </data>
  </layer>
- <layer id="12" name="spawn" width="100" height="100" locked="1">
+ <layer id="12" name="spawn" width="100" height="100" visible="0" locked="1">
   <data encoding="base64" compression="zlib">
    eJztzjEBAAAMAiA72b+bMbYDEpAAAAAAAAAAAAAAAAC9DgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAG8MTioANA==
   </data>
  </layer>
- <layer id="13" name="pathfinder" width="100" height="100" visible="0" locked="1">
+ <layer id="13" name="pathfinder" width="100" height="100">
   <data encoding="base64" compression="zlib">
-   eJzt1VsKhDAUREH35P735rfg48Y04YJVkJ8RZqAPZrYNAAAAAAAAAIAV9sJhHT160aMXPfJmdtQjL7WjHjVvO40+v/r86Xv0OavucreVHlnVnWbOyO/8nfuql5Fd7u4xPdap7FbZUY+M1H+CHhl69JLYeOTwnfdjreTGeszToxc9etGjFz0AAAAAAAAAAAAAAAAAAAAAAAAAAAAA+IMDXBpapg==
+   eJzt1UkOwyAQBED/yv//Wa5xhGGGLRyqJCQfWKRuga8LAAAAAAAAAIAd7sBgH32cRR9n0ccavTnqY40ZOeojppVTK7/Iuto5+nl6y7E0r7a+tE9tnj7KWvdhZJTO0Udd9r2Kvmfeqz6ZXPw//i/6FvXuo4+c2v8+k7E+5vnt4/tbH3vNyDgz6Od+7DUzY32M08dZ9HGWSMaZufoYsyJjfQAAAAAAAAAAAAAAAAAAAAAAAAAAAABwmg/0WF0I
   </data>
  </layer>
  <layer id="14" name="weapons" width="100" height="100" locked="1">
@@ -41,22 +41,22 @@
    eJzt1jENAAAIBLEXhX9tOGCFkFbBjZcAAAAAAAAAAAAAwG21HQAA8Iy/AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIBZA740AGk=
   </data>
  </layer>
- <layer id="17" name="src" width="100" height="100">
+ <layer id="17" name="src" width="100" height="100" visible="0">
   <data encoding="base64" compression="zlib">
    eJztzgENAAAIA6B3sn83Y9xNSEACAAAAAAAAAAAAAAAAAAAAd007AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC8syxVADQ=
   </data>
  </layer>
- <layer id="18" name="dst" width="100" height="100">
+ <layer id="18" name="dst" width="100" height="100" visible="0">
   <data encoding="base64" compression="zlib">
    eJztzjEBAAAIA6B1sn83K+zSBxKQAAAAAAAAAAAAAAAAAACN+Q4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJxarsAA0
   </data>
  </layer>
- <layer id="19" name="search" width="100" height="100">
+ <layer id="19" name="search" width="100" height="100" visible="0">
   <data encoding="base64" compression="zlib">
    eJzt1LENAAAEBEA72X83E+gIxV31peTzIgAAAAAAAAAAAAAAduX1AfBYNhngGz/qng6gZx8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABMK83GATM=
   </data>
  </layer>
- <layer id="20" name="detect" width="100" height="100">
+ <layer id="20" name="detect" width="100" height="100" visible="0">
   <data encoding="base64" compression="zlib">
    eJztzgENAAAIA6B3sn83Y3xOSEACAAAAAAAAAAAAAAAAfDHtAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAcsFJLADQ=
   </data>

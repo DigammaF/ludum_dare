@@ -96,6 +96,57 @@ class ShortAnimation(Task):
 		return True
 
 
+class XGuideTo(Task):
+
+
+	def __init__(self, entity, x, y):
+
+		self.entity = entity
+		self.x = x
+		self.y = y
+
+		self.route_points = None
+		self.key = None
+		self.keep_alive = True
+
+	def setup(self, game):
+
+		self.route_points, self.key = game.create_route_points(
+			self.entity.x,
+			self.entity.y,
+			self.x,
+			self.y,
+		)
+
+		self.game = game
+
+		if self.route_points is None:
+			print("Unable to do that")
+			return
+
+		self.follow_path()
+
+	def follow_path(self):
+
+		if not self.route_points:
+			self.game.pf_tree.destroy_route(self.key)
+			self.keep_alive = False
+			return
+
+		ngoal = self.route_points[0]
+		del self.route_points[0]
+
+		self.game.add_task(GuideTo(
+			main_entity=self.entity,
+			x=ngoal[0],
+			y=ngoal[1],
+			callback=lambda self=self: self.follow_path(),
+		))
+
+	def is_alive(self, game):
+		return self.keep_alive
+
+
 class GuideTo(Task):
 
 

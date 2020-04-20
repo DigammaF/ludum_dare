@@ -5,6 +5,10 @@ import arcade, math
 from queue import SimpleQueue
 
 
+def distance(c1, c2):
+	return math.sqrt((c1[0] - c2[0])**2 + (c1[1] - c2[1])**2)
+
+
 class Tree:
 
 
@@ -26,24 +30,102 @@ class Tree:
 			and arcade.is_point_in_polygon(x_dst, y_dst, self.poly)
 
 	@staticmethod
+	def generate_idea(game):
+
+		exact_map = {}
+
+		for sprite in game.pf_data:
+
+			coord = (
+				sprite.center_x,
+				sprite.center_y,
+			)
+
+			exact_map[coord] = Node.new(*coord)
+
+		mi = (float("inf"), float("inf"))
+		ma = (float("-inf"), float("-inf"))
+
+		for coord, node in exact_map.items():
+
+			if sum(coord) < sum(mi):
+				mi = coord
+
+			if sum(coord) > sum(ma):
+				ma = coord
+
+		log_map = {}
+
+	@staticmethod
 	def generate(game):
+
+		nodes = []
+		nodes_map = {}  # {(int, int): node}
+
+		for sprite in game.pf_data:
+
+			reduced_coord = (
+				sprite.center_x // (game.TILE_SIZE),
+				sprite.center_y // (game.TILE_SIZE),
+			)
+
+			coord = (
+				sprite.center_x,
+				sprite.center_y,
+			)
+
+			nnode = Node.new(
+				x=sprite.center_x,
+				y=sprite.center_y,
+				rx=reduced_coord[0],
+				ry=reduced_coord[1],
+			)
+
+			nodes.append(nnode)
+
+			nodes_map[coord] = nnode
+
+		for coord, node in nodes_map.items():
+
+			neighbors = []
+
+			for coord2, node2 in nodes_map.items():
+
+				if node is node2: continue
+
+				if distance(coord, coord2) <= game.TILE_SIZE*1.5:
+					neighbors.append(node2)
+
+			if len(neighbors) > 4:
+				print("Construction du pathfinder anormale")
+
+			for neighbor in neighbors:
+				node.link_to(neighbor)
+
+		return Tree(nodes=nodes)
+
+	@staticmethod
+	def generate_old(game):
 
 		nodes = []
 		nodes_map = {} # {(int, int): node}
 
 		for sprite in game.pf_data:
 
+			reduced_coord = (
+				sprite.center_x // (game.TILE_SIZE),
+				sprite.center_y // (game.TILE_SIZE),
+			)
+
 			nnode = Node.new(
 				x=sprite.center_x,
 				y=sprite.center_y,
+				rx=reduced_coord[0],
+				ry=reduced_coord[1],
+				sprite=sprite,
 			)
 
 			nodes.append(nnode)
-
-			reduced_coord = (
-				sprite.center_x//game.TILE_SIZE,
-				sprite.center_y//game.TILE_SIZE,
-			)
 
 			nodes_map[reduced_coord] = nnode
 
@@ -57,7 +139,7 @@ class Tree:
 			):
 
 				if vicinity_coord in nodes_map:
-					nodes_map[coord].link_to(nodes_map[vicinity_coord])
+					node.link_to(nodes_map[vicinity_coord])
 
 		return Tree(nodes=nodes)
 
@@ -65,23 +147,29 @@ class Tree:
 class Node:
 
 
-	def __init__(self, links, safe, x, y):
+	def __init__(self, links, safe, x, y, rx, ry, sprite):
 
 		self.links = links # {local_index(int): Node}
 		self.safe = safe # {int: {"height": int}
 		self.x = x
 		self.y = y
+		self.rx = rx
+		self.ry = ry
+		self.sprite = sprite
 
 	def __str__(self):
 		return f"{self.x};{self.y};{self.links.keys()}"
 
 	@staticmethod
-	def new(x, y):
+	def new(x, y, rx=None, ry=None, sprite=None):
 		return Node(
 			links={},
 			safe={},
 			x=x,
 			y=y,
+			rx=rx,
+			ry=ry,
+			sprite=sprite,
 		)
 
 	def link_to(self, node):

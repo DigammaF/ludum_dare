@@ -60,8 +60,10 @@ EXCLAMATION_SPRITE_PATH = ASSETS_PATH / "exclamation.png"
 
 BROTHER_RUNNING_RIGHT_SCHEME = ANIMATIONS_PATH / "b_running_{}.png"
 BROTHER_IDLE_SCHEME = ANIMATIONS_PATH / "b_idle_{}.png"
+BROTHER_DEATH_SCHEME = ANIMATIONS_PATH / "b_death_{}.png"
 SISTER_RUNNING_RIGHT_SCHEME = ANIMATIONS_PATH / "g_running_{}.png"
 SISTER_IDLE_SCHEME = ANIMATIONS_PATH / "g_idle_{}.png"
+SISTER_DEATH_SCHEME = ANIMATIONS_PATH / "g_death_{}.png"
 SOLDIER_RUNNING_RIGHT_SCHEME = ANIMATIONS_PATH / "s_running_{}.png"
 SOLDIER_IDLE_SCHEME = ANIMATIONS_PATH / "s_idle_{}.png"
 
@@ -395,7 +397,6 @@ class Game(arcade.Window):
 		self.props = arcade.tilemap.process_layer(map, "props", PROPS_SCALING)
 
 		make_static(self.walls)
-		make_static(self.weapons); make_use_spatial_hash(self.weapons)
 		make_static(self.grounds); make_use_spatial_hash(self.grounds)
 		make_static(self.pf_data); make_use_spatial_hash(self.pf_data)
 
@@ -437,8 +438,8 @@ class Game(arcade.Window):
 			idle_right_file_scheme=str(BROTHER_IDLE_SCHEME),
 			idle_right_amount=2,
 			idle_pace=2,
-			dying_right_file_scheme=str(DYING_GENERIC_SCHEME),
-			dying_right_amount=3,
+			dying_right_file_scheme=str(BROTHER_DEATH_SCHEME),
+			dying_right_amount=2,
 			dying_right_pace=4,
 			m_scale=ENTITY_SCALING,
 			scale=ENTITY_SCALING,
@@ -457,8 +458,8 @@ class Game(arcade.Window):
 			idle_right_file_scheme=str(SISTER_IDLE_SCHEME),
 			idle_right_amount=2,
 			idle_pace=2,
-			dying_right_file_scheme=str(DYING_GENERIC_SCHEME),
-			dying_right_amount=3,
+			dying_right_file_scheme=str(SISTER_DEATH_SCHEME),
+			dying_right_amount=2,
 			dying_right_pace=4,
 			m_scale=ENTITY_SCALING,
 			scale=ENTITY_SCALING,
@@ -641,6 +642,8 @@ class Game(arcade.Window):
 					center_y=sprite.center_y,
 					scale=ENTITY_SCALING
 				)
+
+		self.engine.sister.draw_health()
 
 		self.exclamations.draw()
 		self.weapons.draw()

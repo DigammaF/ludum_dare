@@ -43,7 +43,7 @@ class MainEntity:
 
 
 	def __init__(self, x, y, dx, dy, command_x, command_y, level, has_weapon,
-				 command_take_weapon, kind, speed=None, dead=False):
+				 command_take_weapon, kind, speed=None, dead=False, health=100):
 
 		self.x = x
 		self.y = y
@@ -68,6 +68,7 @@ class MainEntity:
 		self.speed = speed
 
 		self.dead = dead
+		self.health = health
 
 	@staticmethod
 	def new(x, y, kind):
@@ -85,7 +86,21 @@ class MainEntity:
 		)
 
 	def draw_health(self):
-		pass
+
+		arcade.draw_rectangle_filled(
+			center_x=self.x,
+			center_y=self.associated_sprite._get_bottom() - GLOBAL_SCALE*10,
+			height=GLOBAL_SCALE*3,
+			width=(self.health/100)*GLOBAL_SCALE*20,
+			color=arcade.csscolor.GREEN,
+		)
+		arcade.draw_rectangle_outline(
+			center_x=self.x,
+			center_y=self.associated_sprite._get_bottom() - GLOBAL_SCALE*10,
+			height=GLOBAL_SCALE * 3,
+			width=GLOBAL_SCALE * 20,
+			color=arcade.csscolor.BLACK,
+		)
 
 	def get_vision_polygon(self):
 		return [

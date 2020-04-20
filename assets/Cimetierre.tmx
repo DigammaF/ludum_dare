@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.2" tiledversion="1.2.5" orientation="orthogonal" renderorder="left-down" width="100" height="100" tilewidth="24" tileheight="24" infinite="0" nextlayerid="12" nextobjectid="1">
+ <tileset firstgid="1" source="tileset maison.tsx"/>
+ <layer id="2" name="ground" width="100" height="100">
+  <data encoding="base64" compression="zlib">
+   eJzt2EEOgjAQQFG8h0t2XsP7n8kFGkGxtlOUib6XNBoINem3TXQYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgF91rBw9z0bm/ld65KJHLnrk0rtmerT79Jrp0WbvtdBjqbQW58JoUZpHj6Voj3dtap/VYylypteudcu66zGJ9hiv70/D+vo/3tejTnQvnK73x9nrY4f59eie+TfR/bHFdT2e6ZFL9LzaYujxzP7IRY9cnFe52B+56JGL8yqX3v2x9r/IONx/n9sfbbY4r24OL+bWo17vWhwKo+Wz9JhEv7e3UerRO7ceeuxNj1z0AAAA+L4LTgKCQw==
+  </data>
+ </layer>
+ <layer id="3" name="walls" width="100" height="100">
+  <data encoding="base64" compression="zlib">
+   eJzt0UEKgzAURdFQRTckdStO7f4XoQNBJ5UMbH0t58CHTH4IuaUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAfM7r7gcAEGv+8fv/jR5Z9MiiRxY9suiRRY8semTRI4seWWr+67nOsE05nMeL7mc3VUz7Zrep3OdaZz34Pj2y6JGlX+exTTmcu9teBAAAkG8BkoEQVw==
+  </data>
+ </layer>
+ <layer id="4" name="glasses" width="100" height="100">
+  <data encoding="base64" compression="zlib">
+   eJzt14FqgzAQBuB7zK011tH3f4cp5EgsWNbhqO2+Dw5CNCF4+KMRAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/MR1ro+NesTWHtfdTvo/fL34/u9GP45FP45leV7jXGWuqY6HX+5V6tqx1iX041HeD7hvyZnMmCVvpjqf40usc2zs5m7nS73W7wOwlyVnpmh5k/lTurnMpqj3DjdrItbfVqW7H2AvmTP9P2FEy7Gt76v+/y+i5ViuyxwD2EufP5k1ES2n7hmi5VLuM3Vj/sZprnM3Pj3xLLRe5Fg/juMc6/4AEZ/PPgAAAMAL+QbpZysJ
+  </data>
+ </layer>
+ <layer id="5" name="doors" width="100" height="100">
+  <data encoding="base64" compression="zlib">
+   eJztzjENAAAIACAz2MX+1Yzg4eHcIAERAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMKvrAACwltcBAACAJxrnWwBI
+  </data>
+ </layer>
+ <layer id="7" name="open_doors" width="100" height="100">
+  <data encoding="base64" compression="zlib">
+   eJztzjEBAAAIA6ClNr8R9ukDCUgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACgm+8AAAAAAMCRBVI2AHc=
+  </data>
+ </layer>
+ <layer id="6" name="sticks" width="100" height="100">
+  <data encoding="base64" compression="zlib">
+   eJzt1bEJAEAIA0CHdn9sv38khXcTBAJJFQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACQ1ukAfNEfsMnGAJfYPABefgEAAAAAgKQBggYCRQ==
+  </data>
+ </layer>
+ <layer id="8" name="src" width="100" height="100" visible="0">
+  <data encoding="base64" compression="zlib">
+   eJztzjEBAAAIwKDVtr0x9IAEFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwxVwHAAAAAAAAAAAAgBZurQB6
+  </data>
+ </layer>
+ <layer id="9" name="patrols" width="100" height="100" visible="0">
+  <data encoding="base64" compression="zlib">
+   eJzt1DENAAAIBDF0ox4FbDB80o4n4KoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABI0Ecd4JtfASn8CgAAAAAA2Ax8RARL
+  </data>
+ </layer>
+ <layer id="10" name="exit" width="100" height="100" visible="0">
+  <data encoding="base64" compression="zlib">
+   eJztzgENAAAIA6DnNr0x7iYkIAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADgs2kHAAAAAAAAAAAAAI5ZVSwAew==
+  </data>
+ </layer>
+ <layer id="11" name="pathfinder" width="100" height="100">
+  <data encoding="base64" compression="zlib">
+   eJzt1UEKgCAURVHX7eqbNhAzSX3BOeAkcPJvaikAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAvS3m1cbauZ++1nyfFuu05tubvR7fefO/9747M+vM9GAdPc6Zebu98Xs5H1n0OMd9lc/5yKLHOe6r/zLjLHpk0SOLHln0yKJHFj0AAADGXHAyQcU=
+  </data>
+ </layer>
+</map>

@@ -58,7 +58,7 @@ class MainEntity:
 
 
 	def __init__(self, x, y, dx, dy, command_x, command_y, level,
-				 command_take_weapon, kind, speed=None, dead=False, health=100,
+				 command_take_weapon, kind, game, speed=None, dead=False, health=100,
 				 has_stick=False, has_axe=False):
 
 		self.x = x
@@ -72,6 +72,8 @@ class MainEntity:
 		self.has_axe = has_axe
 		self.command_take_weapon = command_take_weapon
 		self.kind = kind
+
+		self.game = game
 
 		self.associated_exclamation = None
 		self.mood_trial_ttl = BROTHER_MOOD_TRIAL_TTL
@@ -147,7 +149,7 @@ class MainEntity:
 		return None
 
 	@staticmethod
-	def new(x, y, kind):
+	def new(x, y, kind, game):
 		return MainEntity(
 			x=x,
 			y=y,
@@ -158,6 +160,7 @@ class MainEntity:
 			level=0,
 			command_take_weapon=False,
 			kind=kind,
+			game=game,
 		)
 
 	def draw_health(self):
@@ -241,6 +244,18 @@ class MainEntity:
 	def die(self):
 
 		if self.dead: return
+
+		if self.kind == MainEntity.BROTHER:
+			self.game.add_task(task.After(
+				time=6,
+				f=lambda self=self: self.game.setup(self.game.DEFEAT_BOY),
+			))
+
+		if self.kind == MainEntity.SISTER:
+			self.game.add_task(task.After(
+				time=6,
+				f=lambda self=self: self.game.setup(self.game.DEFEAT_GIRL),
+			))
 
 		self.associated_sprite.play_die_animation()
 		self.dead = True
@@ -453,10 +468,10 @@ class GameEngine:
 		self.entities = entities # {key: MainEntity}
 
 	@staticmethod
-	def new(brother_x=0, brother_y=0, sister_x=0, sister_y=0):
+	def new(game, brother_x=0, brother_y=0, sister_x=0, sister_y=0):
 		return GameEngine(
-			brother=MainEntity.new(brother_x, brother_y, MainEntity.BROTHER),
-			sister=MainEntity.new(sister_x, sister_y, MainEntity.SISTER),
+			brother=MainEntity.new(brother_x, brother_y, MainEntity.BROTHER, game),
+			sister=MainEntity.new(sister_x, sister_y, MainEntity.SISTER, game),
 			entities={},
 		)
 

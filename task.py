@@ -434,3 +434,9 @@ class Detection(Task):
 			return False
 
 		return True
+
+
+class SoundPlayer(Task):
+
+
+	pass

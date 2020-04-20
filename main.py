@@ -185,6 +185,10 @@ class Camera:
 class Game(arcade.Window):
 
 
+	DEFEAT_BOY = DEFEAT_BOY
+	DEFEAT_GIRL = DEFEAT_GIRL
+
+
 	TILE_SIZE = 20*GLOBAL_SCALE
 
 	ORDER_COME_HERE = 0
@@ -654,6 +658,7 @@ class Game(arcade.Window):
 		self.sister_doors_physics_engine = arcade.PhysicsEngineSimple(self.sister, self.doors)
 
 		self.engine = engine.GameEngine.new(
+			self,
 			self.brother.center_x,
 			self.brother.center_y,
 			self.sister.center_x,

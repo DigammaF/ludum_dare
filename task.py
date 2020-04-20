@@ -131,7 +131,6 @@ class XGuideTo(Task):
 		self.game = game
 
 		if self.route_points is None:
-			print("Unable to do that")
 			return
 
 		self.follow_path()
@@ -171,6 +170,98 @@ class XGuideTo(Task):
 				self.follow_path
 			),
 		))
+
+	def is_alive(self, game):
+		return self.keep_alive
+
+
+class PermaFollow(Task):
+
+
+	def __init__(self, follower, followed, stop_when):
+
+		self.follower = follower
+		self.followed = followed
+
+		self.followed_coord = (self.followed.x, self.followed.y)
+
+		self.stop_when = stop_when
+
+		self.guider = None
+		self.guider_key = None
+
+		self.keep_alive = True
+		self.pause = False
+
+	def update(self, dt, game):
+
+		if self.stop_when():
+			self.quit()
+			return
+
+		if abs(self.followed.x - self.followed_coord[0]) > 20*GLOBAL_SCALE\
+			or abs(self.followed.y - self.followed_coord[1]) > 20*GLOBAL_SCALE:
+			self.drop_guider()
+
+		self.pause = abs(self.followed.x - self.follower.x) < 20*GLOBAL_SCALE\
+		and abs(self.followed.y - self.follower.y) < 20*GLOBAL_SCALE
+
+		if self.pause:
+			self.drop_guider()
+
+		if self.guider is None and not self.pause:
+
+			self.guider = XGuideTo(self.follower, self.followed.x, self.followed.y,
+								   callback=self.drop_guider)
+			self.guider_key = game.add_task(self.guider)
+
+	def quit(self):
+
+		if self.guider is not None:
+			self.guider.quit()
+
+		self.keep_alive = False
+
+	def drop_guider(self):
+
+		if self.guider is not None:
+			self.guider.quit()
+
+		self.guider = None
+
+	def is_alive(self, game):
+
+		return self.keep_alive
+
+
+class AttackMove(Task):
+
+
+	def __init__(self, entity, target):
+
+		self.entity = entity
+		self.target = target
+
+		self.guider = None
+
+		self.keep_alive = True
+
+	def update(self, dt, game):
+
+		self.entity.try_attack(self.target)
+
+		if not self.keep_alive:
+			return
+
+		if self.guider is None:
+			self.guider = PermaFollow(followed=self.target, follower=self.entity, stop_when=lambda :False)
+
+	def quit(self):
+
+		if self.guider is not None:
+			self.guider.quit()
+
+		self.keep_alive = False
 
 	def is_alive(self, game):
 		return self.keep_alive

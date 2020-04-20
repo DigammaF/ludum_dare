@@ -179,13 +179,14 @@ class Game(arcade.Window):
 		super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
 
 		self.walls = None
-		self.weapons = None
 		self.exclamations = None
 		self.grounds = None
 		self.glasses = None
 		self.entities = None
 		self.props = None
 		self.animators = None
+		self.sticks = None
+		self.axes = None
 
 		self.doors = None
 		self.doors_storage = []
@@ -321,6 +322,10 @@ class Game(arcade.Window):
 				follower = [self.engine.brother, self.engine.sister][self.controlled is self.engine.brother]
 				followed = self.controlled
 
+				if not follower.can_be_commanded:
+					print("Cant be commanded")
+					return
+
 				self.current_order_task_key = self.add_task(task.XGuideTo(
 					follower,
 					followed.x,
@@ -411,7 +416,8 @@ class Game(arcade.Window):
 		map = arcade.tilemap.read_tmx(str(data[0]))
 		self.map = map
 		self.walls = arcade.tilemap.process_layer(map, "walls", WALL_SCALING)
-		self.weapons = arcade.tilemap.process_layer(map, "weapons", WEAPON_SCALING)
+		self.sticks = arcade.tilemap.process_layer(map, "sticks", WEAPON_SCALING)
+		self.axes = arcade.tilemap.process_layer(map, "axes", WEAPON_SCALING)
 		self.grounds = arcade.tilemap.process_layer(map, "ground", GROUND_SCALING)
 		self.glasses = arcade.tilemap.process_layer(map, "glass", GLASS_SCALING)
 		self.spawn = arcade.tilemap.process_layer(map, "spawn", SPAWN_SCALING)
@@ -532,7 +538,7 @@ class Game(arcade.Window):
 		self.camera.follow(self.controlled)
 
 		if FOG_OF_WAR_ENABLED:
-			for sprite in chain(self.grounds, self.entities, self.walls, self.glasses, self.doors, self.open_doors, self.weapons):
+			for sprite in chain(self.grounds, self.entities, self.walls, self.glasses, self.doors, self.open_doors, self.sticks, self.axes):
 				sprite._set_alpha(INVISIBLE)
 
 		self.pf_tree = pathfinder.Tree.generate(self)
@@ -686,7 +692,8 @@ class Game(arcade.Window):
 		self.engine.sister.try_health_display()
 
 		self.exclamations.draw()
-		self.weapons.draw()
+		self.sticks.draw()
+		self.axes.draw()
 
 		for animator in self.animators:
 			animator.texture.draw_scaled(
@@ -794,7 +801,9 @@ class Game(arcade.Window):
 		if self.keyboard[Controls.DOWN]: command_y -= 1
 
 		if CAMERA_ATTACHED:
-			self.controlled.set_command(command_x, command_y, BROTHER_SPEED)
+
+			if self.controlled.can_be_commanded:
+				self.controlled.set_command(command_x, command_y, BROTHER_SPEED)
 
 		else:
 			self.camera.set_command(command_x, command_y)
@@ -825,9 +834,21 @@ class Game(arcade.Window):
 		for key in to_be_rem:
 			self.rem_task(key)
 
+	def deal_with_out_level_and_order(self):
+
+		if not self.engine.brother.can_be_commanded\
+			or not self.engine.sister.can_be_commanded:
+
+			if self.current_order_task_key is not None:
+
+				self.tasks[self.current_order_task_key].quit()
+				self.current_order_task_key = None
+
 	def on_update(self, delta_time: float):
 
 		self.camera.update(delta_time)
+
+		self.deal_with_out_level_and_order()
 
 		#self.update_order()
 

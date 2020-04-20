@@ -2,8 +2,16 @@
 
 import arcade, math, random
 
+import task
+
 from scale import GLOBAL_SCALE
 
+
+ATTACK_TIME = 3
+FIST_DAMAGE = 5
+STICK_DAMAGE = 20
+AXE_DAMAGE = 40
+ATTACK_RANGE = 40*GLOBAL_SCALE
 
 BROTHER_BERSERK_DECREASE_RANGE = 80*GLOBAL_SCALE
 BROTHER_BERSERK_INCREASE_RANGE = 40*GLOBAL_SCALE
@@ -83,17 +91,52 @@ class MainEntity:
 
 		self.display_health_for = 6
 
+		self.can_be_commanded = True
+
+		self.attack_time = 0
+
+		self.pick_weapon_task = None
+		self.attack_task = None
+
+	def take_damage(self, d):
+
+		self.health -= d
+
+		if self.health <= 0:
+			self.die()
+
+	def computed_damage(self):
+
+		if self.has_axe:
+			return AXE_DAMAGE
+
+		if self.has_stick:
+			return STICK_DAMAGE
+
+		return FIST_DAMAGE
+
+	def can_attack(self):
+
+		return self.attack_time <= 0
+
+	def try_attack(self, entity):
+
+		if self.can_attack() and arcade.get_distance_between_sprites(self.associated_sprite, entity.associated) <= ATTACK_RANGE:
+
+			self.attack_time = ATTACK_TIME
+
+			entity.take_damage(self.computed_damage())
+
 	@property
 	def weapon_t(self):
+
+		if self.has_axe:
+			return "axe"
 
 		if self.has_stick:
 			return "stick"
 
-		elif self.has_axe:
-			return "axe"
-
-		else:
-			return None
+		return None
 
 	@staticmethod
 	def new(x, y, kind):
@@ -193,37 +236,125 @@ class MainEntity:
 		self.dead = True
 		self.stop_motion_command()
 
-	def update_berserk(self, dt):
+	def command_take_weapon_off(self):
+
+		self.command_take_weapon = False
+
+	def update_berserk(self, dt, game):
 
 		self.demon_time += dt
 
 		if self.demon_time > S_DEMON_TIME:
 
 			self.demon_state = 1
+			self.can_be_commanded = False
+			self.stop_motion_command()
 
 		if self.demon_time > DEMON_TIME:
 
 			self.demon_state = 2
+			self.can_be_commanded = False
 
 			self.demon_decay_time -= dt
 
 			if self.demon_decay_time < 0:
 				self.level = 0
+				return
+
+			closest_stick = arcade.get_closest_sprite(self.associated_sprite, game.sticks)
+			closest_axe = arcade.get_closest_sprite(self.associated_sprite, game.axes)
+
+			if closest_stick is not None:
+				closest_stick, d_stick = closest_stick
+
+			else:
+				closest_stick, d_stick = None, float("inf")
+
+			if closest_axe is not None:
+				closest_axe, d_axe = closest_axe
+
+			else:
+				closest_axe, d_axe = None, float("inf")
+
+			d_sister = arcade.get_distance_between_sprites(self.associated_sprite, game.engine.sister.associated_sprite)
+
+			if self.weapon_t is None:
+
+				if closest_axe is not None and d_axe < d_sister:
+
+					self.command_take_weapon = True
+
+					self.pick_weapon_task = task.XGuideTo(
+						entity=self,
+						x=closest_axe.center_x,
+						y=closest_axe.center_y,
+						callback=self.command_take_weapon_off,
+					)
+					game.add_task(self.pick_weapon_task)
+
+					return
+
+				elif closest_stick is not None and d_stick < d_sister:
+
+					self.command_take_weapon = True
+
+					self.pick_weapon_task = task.XGuideTo(
+						entity=self,
+						x=closest_stick.center_x,
+						y=closest_stick.center_y,
+						callback=self.command_take_weapon_off,
+					)
+					game.add_task(self.pick_weapon_task)
+
+					return
+
+			elif self.weapon_t == "stick":
+
+				if closest_axe is not None and d_axe < d_sister:
+
+					self.command_take_weapon = True
+
+					self.pick_weapon_task = task.XGuideTo(
+						entity=self,
+						x=closest_axe.center_x,
+						y=closest_axe.center_y,
+						callback=self.command_take_weapon_off,
+					)
+					game.add_task(self.pick_weapon_task)
+
+					return
+
+			elif self.weapon_t == "axe":
+				pass # nothing to do, already equipped
+
+			self.attack_task = task.AttackMove(entity=self, target=game.engine.sister)
+			game.add_task(self.attack_task)
 
 	def reset_berserk(self):
 
 		self.demon_state = None
 		self.demon_time = 0
 		self.demon_decay_time = DEMON_DECAY_TIME
+		self.can_be_commanded = True
+
+		if self.attack_task is not None:
+			self.attack_task.quit()
+
+		if self.pick_weapon_task is not None:
+			self.pick_weapon_task.quit()
+
+		self.attack_task = None
+		self.pick_weapon_task = None
 
 	def try_health_display(self):
 
 		if self.display_health_for > 0:
 			self.draw_health()
 
-	def mood_update(self, dt, d):
+	def mood_update(self, dt, d, game):
 
 		self.display_health_for = max(0, self.display_health_for - dt)
+		self.attack_time = max(-1, self.attack_time - dt)
 
 		if self.dead: return
 
@@ -246,7 +377,7 @@ class MainEntity:
 					self.level += 1
 
 			if self.is_out_leveled:
-				self.update_berserk(dt)
+				self.update_berserk(dt, game)
 
 			else:
 				self.reset_berserk()
@@ -331,18 +462,26 @@ class GameEngine:
 
 		if self.brother.command_take_weapon:
 
-			collided_weapons = arcade.check_for_collision_with_list(brother, game.weapons)
+			collided_weapons = arcade.check_for_collision_with_list(brother, game.sticks)
 
 			for w in collided_weapons:
 
 				w.remove_from_sprite_lists()
-				self.brother.has_weapon = True
+				self.brother.has_stick = True
+				break
+
+			collided_weapons = arcade.check_for_collision_with_list(brother, game.axes)
+
+			for w in collided_weapons:
+
+				w.remove_from_sprite_lists()
+				self.brother.has_axe = True
 				break
 
 		d = distance(self.brother, self.sister)
 
-		self.brother.mood_update(dt, d)
-		self.sister.mood_update(dt, d)
+		self.brother.mood_update(dt, d, game)
+		self.sister.mood_update(dt, d, game)
 
 		# End
 

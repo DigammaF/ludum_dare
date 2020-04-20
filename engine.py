@@ -8,10 +8,11 @@ from scale import GLOBAL_SCALE
 
 
 ATTACK_TIME = 3
-FIST_DAMAGE = 5
+FIST_DAMAGE = 10
 STICK_DAMAGE = 20
 AXE_DAMAGE = 40
 ATTACK_RANGE = 40*GLOBAL_SCALE
+HEALTH_DISPLAY_TIME = 4
 
 BROTHER_BERSERK_DECREASE_RANGE = 80*GLOBAL_SCALE
 BROTHER_BERSERK_INCREASE_RANGE = 40*GLOBAL_SCALE
@@ -102,7 +103,10 @@ class MainEntity:
 
 		self.health -= d
 
+		self.display_health_for = HEALTH_DISPLAY_TIME
+
 		if self.health <= 0:
+			self.health = 0
 			self.die()
 
 	def computed_damage(self):
@@ -121,7 +125,7 @@ class MainEntity:
 
 	def try_attack(self, entity):
 
-		if self.can_attack() and arcade.get_distance_between_sprites(self.associated_sprite, entity.associated) <= ATTACK_RANGE:
+		if self.can_attack() and arcade.get_distance_between_sprites(self.associated_sprite, entity.associated_sprite) <= ATTACK_RANGE:
 
 			self.attack_time = ATTACK_TIME
 
@@ -220,13 +224,15 @@ class MainEntity:
 
 	def stop_commands(self):
 
-		self.stop_motion_command()
+		self.stop_motion_command("Stop commands")
 		self.command_take_weapon = False
 
-	def stop_motion_command(self):
+	def stop_motion_command(self, identifier=None):
 
 		self.command_x = 0
 		self.command_y = 0
+
+		#print(f"Stopped by {identifier}")
 
 	def die(self):
 
@@ -234,21 +240,16 @@ class MainEntity:
 
 		self.associated_sprite.play_die_animation()
 		self.dead = True
-		self.stop_motion_command()
+		self.stop_motion_command("entity die")
 
 	def command_take_weapon_off(self):
 
 		self.command_take_weapon = False
+		self.pick_weapon_task = None
 
 	def update_berserk(self, dt, game):
 
 		self.demon_time += dt
-
-		if self.demon_time > S_DEMON_TIME:
-
-			self.demon_state = 1
-			self.can_be_commanded = False
-			self.stop_motion_command()
 
 		if self.demon_time > DEMON_TIME:
 
@@ -259,6 +260,9 @@ class MainEntity:
 
 			if self.demon_decay_time < 0:
 				self.level = 0
+				return
+
+			if self.attack_task is not None or self.pick_weapon_task is not None:
 				return
 
 			closest_stick = arcade.get_closest_sprite(self.associated_sprite, game.sticks)
@@ -282,6 +286,8 @@ class MainEntity:
 
 				if closest_axe is not None and d_axe < d_sister:
 
+					print("Taking axe")
+
 					self.command_take_weapon = True
 
 					self.pick_weapon_task = task.XGuideTo(
@@ -295,6 +301,8 @@ class MainEntity:
 					return
 
 				elif closest_stick is not None and d_stick < d_sister:
+
+					print("Taking stick")
 
 					self.command_take_weapon = True
 
@@ -312,6 +320,8 @@ class MainEntity:
 
 				if closest_axe is not None and d_axe < d_sister:
 
+					print("Taking axe")
+
 					self.command_take_weapon = True
 
 					self.pick_weapon_task = task.XGuideTo(
@@ -327,8 +337,16 @@ class MainEntity:
 			elif self.weapon_t == "axe":
 				pass # nothing to do, already equipped
 
+			print("Attacking")
+
 			self.attack_task = task.AttackMove(entity=self, target=game.engine.sister)
 			game.add_task(self.attack_task)
+
+		elif self.demon_time > S_DEMON_TIME:
+
+			self.demon_state = 1
+			self.can_be_commanded = False
+			self.stop_motion_command("Semi demon")
 
 	def reset_berserk(self):
 

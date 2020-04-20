@@ -137,7 +137,7 @@ class XGuideTo(Task):
 
 	def quit(self):
 
-		self.entity.stop_motion_command()
+		self.entity.stop_motion_command("XGuideTo.quit")
 		self.game.pf_tree.destroy_route(self.key)
 		self.keep_alive = False
 
@@ -254,7 +254,9 @@ class AttackMove(Task):
 			return
 
 		if self.guider is None:
+
 			self.guider = PermaFollow(followed=self.target, follower=self.entity, stop_when=lambda :False)
+			game.add_task(self.guider)
 
 	def quit(self):
 
@@ -295,13 +297,13 @@ class GuideTo(Task):
 	def is_alive(self, game):
 
 		if self.broke:
-			self.main_entity.stop_motion_command()
+			self.main_entity.stop_motion_command("GuideTo.is_alive 1")
 			return False
 
 		if abs(self.main_entity.x - self.x) < 12*GLOBAL_SCALE\
 			and abs(self.main_entity.y - self.y) < 12*GLOBAL_SCALE:
 
-			self.main_entity.stop_motion_command()
+			self.main_entity.stop_motion_command("GuideTO.is_alive 2")
 			if self.callback is not None: self.callback()
 			return False
 

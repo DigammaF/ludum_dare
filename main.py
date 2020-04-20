@@ -312,7 +312,7 @@ class Game(arcade.Window):
 				self.tasks[self.current_order_task_key].quit()
 				self.current_order_task_key = None
 
-			self.controlled.stop_commands()
+			if self.controlled.can_be_commanded: self.controlled.stop_commands()
 			self.controlled = [self.engine.brother, self.engine.sister][self.controlled is self.engine.brother]
 
 		if symbol == Controls.COME_HERE:
@@ -803,7 +803,7 @@ class Game(arcade.Window):
 		if CAMERA_ATTACHED:
 
 			if self.controlled.can_be_commanded:
-				self.controlled.set_command(command_x, command_y, BROTHER_SPEED)
+				self.controlled.set_command(command_x, command_y)
 
 		else:
 			self.camera.set_command(command_x, command_y)

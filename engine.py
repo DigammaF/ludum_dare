@@ -20,6 +20,20 @@ SISTER_SPEED = 0.9*BROTHER_SPEED
 SOLDIER_SPEED = 1.1*BROTHER_SPEED
 
 
+def rotated_angle(x, y, r):
+
+	ca = math.cos(r)
+	sa = math.sin(r)
+
+	return (ca*x - sa*y, sa*x + ca*y)
+
+def added(v1, v2):
+	return (v1[0] + v2[0], v1[1] + v2[1])
+
+def multiplied(v, f):
+	return (v[0]*f, v[1]*f)
+
+
 class MainEntity:
 
 
@@ -29,7 +43,7 @@ class MainEntity:
 
 
 	def __init__(self, x, y, dx, dy, command_x, command_y, level, has_weapon,
-				 command_take_weapon, kind, speed=None):
+				 command_take_weapon, kind, speed=None, dead=False):
 
 		self.x = x
 		self.y = y
@@ -53,6 +67,8 @@ class MainEntity:
 
 		self.speed = speed
 
+		self.dead = dead
+
 	@staticmethod
 	def new(x, y, kind):
 		return MainEntity(
@@ -68,6 +84,19 @@ class MainEntity:
 			kind=kind,
 		)
 
+	def draw_health(self):
+		pass
+
+	def get_vision_polygon(self):
+		return [
+			(self.x, self.y),
+			added(rotated_angle(*multiplied((self.dx, self.dy), 66*GLOBAL_SCALE), math.pi/4), (self.x, self.y)),
+			added(rotated_angle(*multiplied((self.dx, self.dy), 66*GLOBAL_SCALE), -math.pi/4), (self.x, self.y)),
+		 ]
+
+	def draw_vision(self):
+		arcade.draw_polygon_outline(self.get_vision_polygon(), arcade.csscolor.GREEN)
+
 	@property
 	def is_out_leveled(self):
 		return self.level >= 1
@@ -81,6 +110,8 @@ class MainEntity:
 		}[kind]
 
 	def set_command(self, x, y, speed=None):
+
+		if self.dead: return
 
 		if speed is None:
 			speed = self.speed
@@ -115,7 +146,17 @@ class MainEntity:
 		self.command_x = 0
 		self.command_y = 0
 
+	def die(self):
+
+		if self.dead: return
+
+		self.associated_sprite.play_die_animation()
+		self.dead = True
+		self.stop_motion_command()
+
 	def mood_update(self, dt, d):
+
+		if self.dead: return
 
 		if self.kind == MainEntity.BROTHER:
 

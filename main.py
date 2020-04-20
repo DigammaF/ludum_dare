@@ -14,7 +14,7 @@ import arcade, pathlib, cProfile, pstats
 from itertools import chain
 from arcade.sprite_list import _SpatialHash
 
-import engine, pathfinder
+import engine, pathfinder, task
 
 from engine import BROTHER_SPEED, SISTER_SPEED
 from animations import EntitySprite
@@ -64,6 +64,8 @@ SISTER_RUNNING_RIGHT_SCHEME = ANIMATIONS_PATH / "g_running_{}.png"
 SISTER_IDLE_SCHEME = ANIMATIONS_PATH / "g_idle_{}.png"
 SOLDIER_RUNNING_RIGHT_SCHEME = ANIMATIONS_PATH / "s_running_{}.png"
 SOLDIER_IDLE_SCHEME = ANIMATIONS_PATH / "s_idle_{}.png"
+
+DYING_GENERIC_SCHEME = ANIMATIONS_PATH / "death_generic_{}.png"
 
 DEBUG_MAP_PATH = ASSETS_PATH / "debug_map.tmx"
 HOUSE_MAP_PATH = ASSETS_PATH / "house.tmx"
@@ -179,6 +181,7 @@ class Game(arcade.Window):
 		self.glasses = None
 		self.entities = None
 		self.props = None
+		self.animators = None
 
 		self.doors = None
 		self.doors_storage = []
@@ -237,12 +240,32 @@ class Game(arcade.Window):
 		key = self.index_pool.create()
 		self.tasks[key] = task
 		self.task_keys.append(key)
+		task.setup(self)
 
 	def rem_task(self, key):
 
 		del self.tasks[key]
 		self.index_pool.destroy(key)
 		del self.task_keys[self.task_keys.index(key)]
+
+	def xcan_see(self, e1, e2):
+		"""
+
+		can e1 see e2 ?
+
+		:param e1:
+		:param e2:
+		:return:
+		"""
+
+		if arcade.is_point_in_polygon(
+			x=e2.x,
+			y=e2.y,
+			polygon_point_list=e1.get_vision_polygon(),
+		):
+			return self.can_see_sprite(e1.x, e1.y, e2.associated_sprite)
+
+		return False
 
 	def can_see(self, x, y, dest_x, dest_y):
 
@@ -357,6 +380,7 @@ class Game(arcade.Window):
 		self.exclamations = arcade.SpriteList()
 		self.fog_of_war = arcade.SpriteList()
 		self.entities = arcade.SpriteList()
+		self.animators = arcade.SpriteList()
 
 		map = arcade.tilemap.read_tmx(str(data[0]))
 		self.map = map
@@ -413,6 +437,9 @@ class Game(arcade.Window):
 			idle_right_file_scheme=str(BROTHER_IDLE_SCHEME),
 			idle_right_amount=2,
 			idle_pace=2,
+			dying_right_file_scheme=str(DYING_GENERIC_SCHEME),
+			dying_right_amount=3,
+			dying_right_pace=4,
 			m_scale=ENTITY_SCALING,
 			scale=ENTITY_SCALING,
 		)
@@ -430,6 +457,9 @@ class Game(arcade.Window):
 			idle_right_file_scheme=str(SISTER_IDLE_SCHEME),
 			idle_right_amount=2,
 			idle_pace=2,
+			dying_right_file_scheme=str(DYING_GENERIC_SCHEME),
+			dying_right_amount=3,
+			dying_right_pace=4,
 			m_scale=ENTITY_SCALING,
 			scale=ENTITY_SCALING,
 		)
@@ -452,6 +482,9 @@ class Game(arcade.Window):
 			self.sister.center_y,
 		)
 
+		self.engine.brother.associated_sprite = self.brother
+		self.engine.sister.associated_sprite = self.sister
+
 		self.controlled = self.engine.brother
 
 		self.camera = Camera(0, 0)
@@ -468,6 +501,21 @@ class Game(arcade.Window):
 
 		self.level_instance = data[1]()
 		self.level_instance.setup(self)
+
+		"""
+		self.add_task(task.After(2,
+								 lambda self=self:
+								 self.debug_shot()
+								 ))
+		"""
+
+	def debug_shot(self):
+
+		self.add_task(task.SoldierShot(self.brother.center_x, self.brother.center_y))
+		self.add_task(task.After(2,
+								 lambda self=self:
+								 self.debug_shot()
+								 ))
 
 	def draw_out_level_indicators(self):
 
@@ -596,6 +644,16 @@ class Game(arcade.Window):
 
 		self.exclamations.draw()
 		self.weapons.draw()
+
+		for animator in self.animators:
+			animator.texture.draw_scaled(
+				center_x=animator.center_x,
+				center_y=animator.center_y,
+				scale=animator.m_scale,
+			)
+
+		for e in self.engine.entities.values():
+			e.draw_vision()
 
 		#self.draw_debug()
 
@@ -766,6 +824,9 @@ class Game(arcade.Window):
 			idle_right_file_scheme=str(SOLDIER_IDLE_SCHEME),
 			idle_right_amount=2,
 			idle_pace=2,
+			dying_right_file_scheme=str(DYING_GENERIC_SCHEME),
+			dying_right_amount=3,
+			dying_right_pace=4,
 			m_scale=ENTITY_SCALING,
 		)
 

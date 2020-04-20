@@ -5,6 +5,9 @@ import task, arcade, random
 from scale import GLOBAL_SCALE
 
 
+SOLDIER_RELOAD = 3
+
+
 class Level:
 
 
@@ -18,6 +21,10 @@ class Level:
 
 
 class LevelOne(Level):
+
+
+	STATE_PATROL = 0
+	STATE_HUNT = 1
 
 
 	class Detection(task.Task):
@@ -90,6 +97,11 @@ class LevelOne(Level):
 		for patrol in self.patrols:
 			patrol.last_visit_time += dt
 
+		for key in self.keys:
+
+			entity = self.game.engine.entities[key]
+			entity.reload -= dt
+
 	def player_house_exit(self):
 
 		print("Spawn")
@@ -109,17 +121,24 @@ class LevelOne(Level):
 
 			entity = self.game.engine.entities[key]
 
+			entity.state = LevelOne.STATE_PATROL
+			entity.reload = SOLDIER_RELOAD
+
+			self.game.add_task(task.After(1, lambda self=self, entity=entity:
 			self.game.add_task(task.GuideTo(
 				main_entity=entity,
 				x=entity.x + random.randint(160*GLOBAL_SCALE, 320*GLOBAL_SCALE),
 				y=entity.y + random.randint(-20*GLOBAL_SCALE, 80*GLOBAL_SCALE),
-				callback=lambda s=self, e=entity, g=self.game: s.soldier_go_to_house(e, g)
+				callback=lambda s=self, e=entity, g=self.game: s.soldier_go_to_house(e, g),
+				stop_when=lambda ss=self, e=entity: ss.are_children_located(e),
 			))
+							   ))
 
 	def soldier_go_to_house(self, entity, game):
 
 		patrol = self.patrols[random.randint(0, len(self.patrols) - 1)]
 
+		game.add_task(task.After(1, lambda self=self, entity=entity, game=game:
 		game.add_task(task.GuideTo(
 			main_entity=entity,
 			x=self.house_front.center_x,
@@ -128,9 +147,12 @@ class LevelOne(Level):
 				main_entity=e,
 				x=p.center_x,
 				y=p.center_y,
-				callback=lambda s=self, e=e, g=g: s.take_soldier_on_patrol(e, g)
-			)))
+				callback=lambda s=self, e=e, g=g: s.take_soldier_on_patrol(e, g),
+				stop_when=lambda ss=self, e=entity: ss.are_children_located(e),
+			))),
+			stop_when=lambda ss=self, e=entity: ss.are_children_located(e),
 		))
+								 ))
 
 	def take_soldier_on_patrol(self, entity, game):
 
@@ -145,9 +167,68 @@ class LevelOne(Level):
 
 		patrol.last_visit_time = 0
 
+		game.add_task(task.After(1, lambda entity=entity, game=game:
 		game.add_task(task.GuideTo(
 			main_entity=entity,
 			x=patrol.center_x,
 			y=patrol.center_y,
-			callback=lambda s=self, e=entity, g=game: s.take_soldier_on_patrol(e, g)
+			callback=lambda s=self, e=entity, g=game: s.take_soldier_on_patrol(e, g),
+			stop_when=lambda ss=self, e=entity: ss.are_children_located(e),
+		))
+								 ))
+
+	def are_children_located(self, soldier):
+
+		for c in (self.game.engine.brother, self.game.engine.sister):
+
+			if self.game.xcan_see(soldier, c):
+
+				print("Located")
+
+				for key in self.keys:
+					self.go_hunt(self.game.engine.entities[key], c)
+
+				return True
+
+		return False
+
+	def go_hunt(self, soldier, target):
+
+		self.game.add_task(task.After(1, lambda self=self, soldier=soldier, target=target:
+			self.game.add_task(task.GuideTo(
+				main_entity=soldier,
+				x=target.x,
+				y=target.y,
+				callback=lambda s=soldier, t=target, ss=self: ss.shoot(s, t),
+				stop_when=lambda ss=self, s=soldier: ss.is_hunt_successful(s),
+			))
+		))
+
+	def is_hunt_successful(self, soldier):
+
+		for c in (self.game.engine.brother, self.game.engine.sister):
+
+			if self.game.xcan_see(soldier, c):
+
+				self.shoot(soldier, c)
+
+				return True
+
+		return False
+
+	def shoot(self, soldier, target):
+
+		if self.game.xcan_see(soldier, target):
+
+			if soldier.reload > 0:
+				self.go_hunt(soldier, target)
+				return
+
+			self.game.add_task(task.SoldierShot(target.x, target.y))
+
+			soldier.reload = SOLDIER_RELOAD
+
+		self.game.add_task(task.After(1,
+			lambda self=self, soldier=soldier:
+			self.take_soldier_on_patrol(soldier, self.game)
 		))

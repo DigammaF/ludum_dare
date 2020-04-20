@@ -1,0 +1,5 @@
+
+
+GLOBAL_SCALE = 3
+
+# 5

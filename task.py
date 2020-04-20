@@ -2,6 +2,8 @@
 
 import arcade
 
+from scale import GLOBAL_SCALE
+
 
 class Task:
 
@@ -83,8 +85,8 @@ class GuideTo(Task):
 
 	def is_alive(self, game):
 
-		if abs(self.main_entity.x - self.x) < 50\
-			and abs(self.main_entity.y - self.y) < 50:
+		if abs(self.main_entity.x - self.x) < 12*GLOBAL_SCALE\
+			and abs(self.main_entity.y - self.y) < 12*GLOBAL_SCALE:
 
 			self.main_entity.stop_motion_command()
 			if self.callback is not None: self.callback()

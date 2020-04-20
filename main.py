@@ -12,12 +12,14 @@ TODO: Ajout de la commande 'arrête de me suivre'
 import arcade, pathlib, cProfile, pstats
 
 from itertools import chain
+from arcade.sprite_list import _SpatialHash
 
 import engine, pathfinder
 
 from engine import BROTHER_SPEED, SISTER_SPEED
 from animations import EntitySprite
 from levels import LevelOne
+from scale import GLOBAL_SCALE
 
 
 FOG_OF_WAR_REFRESH_TTL = 10
@@ -26,7 +28,8 @@ FOG_OF_WAR_ENABLED = False
 CLIP = True
 CAMERA_ATTACHED = True
 
-DOOR_INTERACTION_RANGE = 100
+#DOOR_INTERACTION_RANGE = 100
+DOOR_INTERACTION_RANGE = 30*GLOBAL_SCALE
 
 
 SCREEN_WIDTH = 1000
@@ -34,16 +37,16 @@ SCREEN_HEIGHT = 650
 SCREEN_TITLE = "Test"
 
 
-ENTITY_SCALING = 100/20 / 2
-WALL_SCALING = 100/20
-WEAPON_SCALING = 100/20
-EXCLAMATION_SCALING = 0.3
-GROUND_SCALING = 100/20
-GLASS_SCALING = 100/20
-SPAWN_SCALING = 100/20
-PATHFINDER_SCALING = 100/20
-DOORS_SCALING = 100/20
-PROPS_SCALING = 100/20
+ENTITY_SCALING = GLOBAL_SCALE / 1.5
+WALL_SCALING = GLOBAL_SCALE
+WEAPON_SCALING = GLOBAL_SCALE
+EXCLAMATION_SCALING = GLOBAL_SCALE / 10
+GROUND_SCALING = GLOBAL_SCALE
+GLASS_SCALING = GLOBAL_SCALE
+SPAWN_SCALING = GLOBAL_SCALE
+PATHFINDER_SCALING = GLOBAL_SCALE
+DOORS_SCALING = GLOBAL_SCALE
+PROPS_SCALING = GLOBAL_SCALE
 
 
 ASSETS_PATH = pathlib.Path("assets")
@@ -76,6 +79,16 @@ LEVELS = {
 
 INVISIBLE = 0
 VISIBLE = 255
+
+
+def make_static(sprite_list):
+
+	sprite_list.is_static = True
+
+def make_use_spatial_hash(sprite_list):
+
+	sprite_list.use_spatial_hash = True
+	sprite_list.spatial_hash = _SpatialHash(cell_size=128)
 
 
 class Controls:
@@ -117,7 +130,7 @@ class Bag:
 class Camera:
 
 
-	def __init__(self, x, y, speed=800):
+	def __init__(self, x, y, speed=160*GLOBAL_SCALE):
 
 		self.x = x
 		self.y = y
@@ -146,7 +159,7 @@ class Camera:
 class Game(arcade.Window):
 
 
-	TILE_SIZE = 100
+	TILE_SIZE = 20*GLOBAL_SCALE
 
 	ORDER_COME_HERE = 0
 
@@ -216,6 +229,8 @@ class Game(arcade.Window):
 		self.level_instance = None
 
 		self.task_keys = None # list
+
+		self.glasses_y_cache = None
 
 	def add_task(self, task):
 
@@ -355,8 +370,10 @@ class Game(arcade.Window):
 		self.open_doors = arcade.tilemap.process_layer(map, "open_doors", DOORS_SCALING)
 		self.props = arcade.tilemap.process_layer(map, "props", PROPS_SCALING)
 
-		if self.props is None:
-			self.props = arcade.SpriteList()
+		make_static(self.walls)
+		make_static(self.weapons); make_use_spatial_hash(self.weapons)
+		make_static(self.grounds); make_use_spatial_hash(self.grounds)
+		make_static(self.pf_data); make_use_spatial_hash(self.pf_data)
 
 		self.doors_storage = self.doors[:]
 		self.open_doors_storage = self.open_doors[:]
@@ -380,6 +397,13 @@ class Game(arcade.Window):
 			spawn_x = 0
 			spawn_y = 0
 
+		self.glasses_y_cache = []
+
+		for sprite in self.glasses:
+			self.glasses_y_cache.append((sprite._get_bottom(), sprite, 0))
+
+		self.glasses_y_cache = sorted(self.glasses_y_cache, key=lambda i: i[0], reverse=True)
+
 		#self.brother = arcade.Sprite(str(BROTHER_SPRITE_PATH), ENTITY_SCALING)
 
 		self.brother = EntitySprite(
@@ -390,6 +414,7 @@ class Game(arcade.Window):
 			idle_right_amount=2,
 			idle_pace=2,
 			m_scale=ENTITY_SCALING,
+			scale=ENTITY_SCALING,
 		)
 
 		self.brother.center_x = spawn_x
@@ -406,6 +431,7 @@ class Game(arcade.Window):
 			idle_right_amount=2,
 			idle_pace=2,
 			m_scale=ENTITY_SCALING,
+			scale=ENTITY_SCALING,
 		)
 
 		self.sister.center_x = spawn_x
@@ -537,10 +563,16 @@ class Game(arcade.Window):
 		self.draw_out_level_indicators()
 
 		self.walls.draw()
-		self.glasses.draw()
 		self.doors.draw()
 		self.open_doors.draw()
-		self.weapons.draw()
+
+		sprs = sorted(chain(
+			self.glasses_y_cache,
+			[(sprite._get_bottom(), sprite, 1) for sprite in self.entities]
+		), key=lambda i: i[0], reverse=True)
+
+		"""
+		self.glasses.draw()
 
 		for entity in self.entities:
 			entity.texture.draw_scaled(
@@ -548,8 +580,22 @@ class Game(arcade.Window):
 				center_y=entity.center_y,
 				scale=ENTITY_SCALING,
 			)
+		"""
+
+		for y, sprite, t in sprs:
+
+			if t == 0:
+				sprite.draw()
+
+			else:
+				sprite.texture.draw_scaled(
+					center_x=sprite.center_x,
+					center_y=sprite.center_y,
+					scale=ENTITY_SCALING
+				)
 
 		self.exclamations.draw()
+		self.weapons.draw()
 
 		#self.draw_debug()
 

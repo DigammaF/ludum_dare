@@ -24,8 +24,8 @@
  </tile>
  <tile id="4">
   <image width="24" height="24" source="Tiles/Mur haut 2.png"/>
-  <objectgroup draworder="index" id="2">
-   <object id="2" x="-0.0709639" y="-0.0709639" width="23.9858" height="23.9858"/>
+  <objectgroup draworder="index">
+   <object id="2" x="-0.0709639" y="0.429036" width="23.9858" height="23.4858"/>
   </objectgroup>
  </tile>
  <tile id="5">
@@ -74,14 +74,14 @@
  </tile>
  <tile id="12">
   <image width="48" height="48" source="Tiles/Table.png"/>
-  <objectgroup draworder="index" id="2">
-   <object id="1" x="0.125" y="8.875" width="48" height="36"/>
+  <objectgroup draworder="index">
+   <object id="1" x="0.125" y="15.875" width="48" height="29"/>
   </objectgroup>
  </tile>
  <tile id="13">
   <image width="48" height="48" source="Tiles/Canapet.png"/>
-  <objectgroup draworder="index" id="2">
-   <object id="5" x="6.75" y="7" width="19.125" height="32.75"/>
+  <objectgroup draworder="index">
+   <object id="5" x="6.75" y="15" width="19.125" height="24.75"/>
   </objectgroup>
  </tile>
  <tile id="14">
@@ -92,14 +92,14 @@
  </tile>
  <tile id="15">
   <image width="48" height="48" source="Tiles/Lit.png"/>
-  <objectgroup draworder="index" id="2">
-   <object id="1" x="6.75" y="7.875" width="35.125" height="35.625"/>
+  <objectgroup draworder="index">
+   <object id="1" x="6.75" y="12.375" width="35.125" height="31.125"/>
   </objectgroup>
  </tile>
  <tile id="16">
   <image width="48" height="24" source="Tiles/Bureau.png"/>
-  <objectgroup draworder="index" id="2">
-   <object id="2" x="0.125" y="0.125" width="47.875" height="16.625"/>
+  <objectgroup draworder="index">
+   <object id="2" x="0.125" y="7.125" width="47.875" height="9.625"/>
   </objectgroup>
  </tile>
  <tile id="17">
@@ -137,25 +137,25 @@
  </tile>
  <tile id="23">
   <image width="24" height="24" source="Tiles/Briques.png"/>
-  <objectgroup draworder="index" id="2">
-   <object id="1" x="0.25" y="0" width="23.625" height="24.125"/>
+  <objectgroup draworder="index">
+   <object id="1" x="0.25" y="0.5" width="23.625" height="23.625"/>
   </objectgroup>
  </tile>
  <tile id="24">
   <image width="24" height="24" source="Tiles/Porte haut.png"/>
-  <objectgroup draworder="index" id="2">
+  <objectgroup draworder="index">
    <object id="1" x="0.125" y="0" width="24" height="24"/>
   </objectgroup>
  </tile>
  <tile id="25">
   <image width="24" height="24" source="Tiles/Fenêtre briques.png"/>
-  <objectgroup draworder="index" id="2">
-   <object id="1" x="0.125" y="0" width="23.875" height="24.125"/>
+  <objectgroup draworder="index">
+   <object id="1" x="0.125" y="-0.5" width="23.875" height="24.625"/>
   </objectgroup>
  </tile>
  <tile id="26">
   <image width="48" height="24" source="Tiles/Grande fenêtre.png"/>
-  <objectgroup draworder="index" id="2">
+  <objectgroup draworder="index">
    <object id="1" x="0" y="-0.125" width="47.75" height="24.25"/>
   </objectgroup>
  </tile>
@@ -221,15 +221,14 @@
  </tile>
  <tile id="45">
   <image width="48" height="72" source="Tiles/Arbre 1.png"/>
-  <objectgroup draworder="index" id="2">
+  <objectgroup draworder="index">
    <object id="2" x="14" y="50.125" width="16.875" height="11"/>
-   <object id="3" x="18.75" y="34.75" width="11.625" height="23.25"/>
   </objectgroup>
  </tile>
  <tile id="46">
   <image width="48" height="96" source="Tiles/Arbre en feu.png"/>
-  <objectgroup draworder="index" id="2">
-   <object id="1" x="0.125" y="36.875" width="48" height="59"/>
+  <objectgroup draworder="index">
+   <object id="1" x="9.125" y="47.875" width="26.5" height="41"/>
   </objectgroup>
  </tile>
  <tile id="47">

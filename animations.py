@@ -82,3 +82,20 @@ class EntitySprite(arcade.AnimatedTimeBasedSprite):
 		self.index = self.index%len(self.anim_played)
 
 		self.texture = self.anim_played[self.index]
+
+		"""
+		self.texture.hit_box_points = [
+			(-10, -15),
+			(-5, -20),
+			(4, -20),
+			(9, -15),
+		]
+		"""
+
+		self._point_list_cache = None
+		self.set_hit_box([
+			(-8, -20),
+			(-8, -5),
+			(8, -5),
+			(8, -20),
+		])

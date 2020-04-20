@@ -2,6 +2,8 @@
 
 import task, arcade, random
 
+from scale import GLOBAL_SCALE
+
 
 class Level:
 
@@ -56,7 +58,7 @@ class LevelOne(Level):
 
 	def setup(self, game):
 
-		sprites = arcade.tilemap.process_layer(game.map, "detect", 100/20)
+		sprites = arcade.tilemap.process_layer(game.map, "detect", GLOBAL_SCALE)
 		sprite = sprites[0]
 
 		game.add_task(LevelOne.Detection(
@@ -65,17 +67,17 @@ class LevelOne(Level):
 			callback=lambda s=self: s.player_house_exit(),
 		))
 
-		sprites = arcade.tilemap.process_layer(game.map, "src", 100/20)
+		sprites = arcade.tilemap.process_layer(game.map, "src", GLOBAL_SCALE)
 		sprite = sprites[0]
 
 		self.spawn_soldiers = sprite
 
-		sprites = arcade.tilemap.process_layer(game.map, "dst", 100/20)
+		sprites = arcade.tilemap.process_layer(game.map, "dst", GLOBAL_SCALE)
 		sprite = sprites[0]
 
 		self.house_front = sprite
 
-		self.patrols = arcade.tilemap.process_layer(game.map, "search", 100/20)
+		self.patrols = arcade.tilemap.process_layer(game.map, "search", GLOBAL_SCALE)
 
 		for i in range(len(self.patrols)):
 			self.patrols[i].last_visit_time = 0
@@ -109,8 +111,8 @@ class LevelOne(Level):
 
 			self.game.add_task(task.GuideTo(
 				main_entity=entity,
-				x=entity.x + random.randint(800, 1600),
-				y=entity.y + random.randint(-100, 400),
+				x=entity.x + random.randint(160*GLOBAL_SCALE, 320*GLOBAL_SCALE),
+				y=entity.y + random.randint(-20*GLOBAL_SCALE, 80*GLOBAL_SCALE),
 				callback=lambda s=self, e=entity, g=self.game: s.soldier_go_to_house(e, g)
 			))
 

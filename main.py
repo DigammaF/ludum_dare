@@ -489,10 +489,13 @@ class Game(arcade.Window):
 		self.level = level
 
 		self.menu = arcade.SpriteList()
+		self.defeat_b = arcade.SpriteList()
+		self.defeat_g = arcade.SpriteList()
+		self.victory = arcade.SpriteList()
 
 		if level == DEFEAT_BOY:
 
-			self.menu.append(arcade.Sprite(
+			self.defeat_b.append(arcade.Sprite(
 				str(ASSETS_PATH / "Ecrans" / "Ecran de mort garcon.png"),
 				center_x=SCREEN_WIDTH//2,
 				center_y=SCREEN_HEIGHT//2,
@@ -503,7 +506,7 @@ class Game(arcade.Window):
 
 		if level == DEFEAT_GIRL:
 
-			self.menu.append(arcade.Sprite(
+			self.defeat_g.append(arcade.Sprite(
 				str(ASSETS_PATH / "Ecrans" / "Ecran de mort fille.png"),
 				center_x=SCREEN_WIDTH//2,
 				center_y=SCREEN_HEIGHT//2,
@@ -533,7 +536,7 @@ class Game(arcade.Window):
 			self.ready = True
 
 		if level == VICTORY:
-			self.menu.append(arcade.Sprite(
+			self.victory.append(arcade.Sprite(
 				str(ASSETS_PATH / "Ecrans" / "Ecran de victoire.png"),
 				center_x=SCREEN_WIDTH // 2,
 				center_y=SCREEN_HEIGHT // 2,
@@ -818,6 +821,9 @@ class Game(arcade.Window):
 		arcade.start_render()
 
 		self.menu.draw()
+		self.defeat_b.draw()
+		self.defeat_g.draw()
+		self.victory.draw()
 
 		if not self.ready: return
 
@@ -1134,7 +1140,7 @@ class Game(arcade.Window):
 
 def main():
 	window = Game()
-	window.setup(MAIN_MENU)
+	window.setup(DEFEAT_GIRL)
 	arcade.run()
 
 

@@ -364,8 +364,6 @@ class MainEntity:
 		elif self.demon_time > S_DEMON_TIME:
 
 			self.demon_state = 1
-			self.can_be_commanded = False
-			self.stop_motion_command("Semi demon")
 
 	def reset_berserk(self):
 
@@ -428,8 +426,6 @@ class MainEntity:
 				self.level -= dt*SISTER_PANIC_D
 
 			if d > FOLLOW_RANGE:
-
-				print("Following")
 
 				if self.panic_task is None:
 					self.panic_task = task.PermaFollow(follower=game.engine.sister, followed=game.engine.brother, stop_when=lambda :False)

@@ -239,6 +239,9 @@ class LevelOne(Level):
 
 	def setup(self, game):
 
+		sprites = arcade.tilemap.process_layer(game.map, "exit", GLOBAL_SCALE)
+		self.exit = sprites[0]
+
 		sprites = arcade.tilemap.process_layer(game.map, "detect", GLOBAL_SCALE)
 		sprite = sprites[0]
 
@@ -253,27 +256,23 @@ class LevelOne(Level):
 
 		self.spawn_soldiers = sprite
 
-		sprites = arcade.tilemap.process_layer(game.map, "dst", GLOBAL_SCALE)
-		sprite = sprites[0]
-
-		self.house_front = sprite
-
 		self.patrols = arcade.tilemap.process_layer(game.map, "patrols", GLOBAL_SCALE)
 
 		for i in range(len(self.patrols)):
 			self.patrols[i].last_visit_time = 0
 
 		self.game = game
-		self.keys = []
+		self.entities = []
 
 	def update(self, dt):
+
+		if arcade.check_for_collision(self.exit, self.game.brother):
+			self.game.setup(self.game.NEXT_LEVEL[self.game.level])
 
 		for patrol in self.patrols:
 			patrol.last_visit_time += dt
 
-		for key in self.keys:
-
-			entity = self.game.engine.entities[key]
+		for entity in self.entities:
 			entity.reload -= dt
 
 	def player_house_exit(self):
@@ -289,10 +288,10 @@ class LevelOne(Level):
 				self.game.new_solider_animated_sprite(),
 			)
 
-			self.keys.append(key)
-
 			entity = self.game.engine.entities[key]
 			entity.reload = SOLDIER_RELOAD
+
+			self.entities.append(entity)
 
 			self.game.add_task(task.Hunt(entity))
 			self.take_soldier_on_patrol(entity, self.game)
@@ -320,14 +319,93 @@ class LevelOne(Level):
 
 class LevelTwo(Level):
 
-	pass
+	def setup(self, game):
+
+		sprites = arcade.tilemap.process_layer(game.map, "exit", GLOBAL_SCALE)
+		self.exit = sprites[0]
+
+		sprites = arcade.tilemap.process_layer(game.map, "src", GLOBAL_SCALE)
+		sprite = sprites[0]
+
+		self.spawn_soldiers = sprite
+
+		self.patrols = arcade.tilemap.process_layer(game.map, "patrols", GLOBAL_SCALE)
+
+		for i in range(len(self.patrols)):
+			self.patrols[i].last_visit_time = 0
+
+		self.game = game
+		self.entities = []
+
+		self.player_house_exit()
+
+	def update(self, dt):
+
+		if arcade.check_for_collision(self.exit, self.game.brother):
+			self.game.setup(self.game.NEXT_LEVEL[self.game.level])
+
+		for patrol in self.patrols:
+			patrol.last_visit_time += dt
+
+		for entity in self.entities:
+			entity.reload -= dt
+
+	def player_house_exit(self):
+
+		for _ in range(3):
+
+			key = self.game.add_entity(
+				self.game.new_entity(
+					self.spawn_soldiers.center_x,
+					self.spawn_soldiers.center_y,
+					self.game.ENTITY_KIND_SOLDIER,
+				),
+				self.game.new_solider_animated_sprite(),
+			)
+
+			entity = self.game.engine.entities[key]
+			entity.reload = SOLDIER_RELOAD
+
+			self.entities.append(entity)
+
+			self.game.add_task(task.Hunt(entity))
+			self.take_soldier_on_patrol(entity, self.game)
+
+	def take_soldier_on_patrol(self, entity, game):
+
+		m = float("-inf")
+		patrol = None
+
+		for p in self.patrols:
+
+			if p.last_visit_time > m:
+				m = p.last_visit_time
+				patrol = p
+
+		patrol.last_visit_time = 0
+
+		game.add_task(task.XGuideTo(
+			entity=entity,
+			x=patrol.center_x,
+			y=patrol.center_y,
+		))
 
 
-class LevelThree(Level):
+class LevelThree(LevelTwo):
 
 	pass
 
 
 class LevelFour(Level):
 
-	pass
+	def setup(self, game):
+
+		self.game = game
+
+		sprites = arcade.tilemap.process_layer(game.map, "exit", GLOBAL_SCALE)
+		self.exit = sprites[0]
+
+	def update(self, dt):
+
+		if arcade.check_for_collision(self.exit, self.game.brother):
+			self.game.setup(self.game.NEXT_LEVEL[self.game.level])

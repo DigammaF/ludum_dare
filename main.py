@@ -96,6 +96,14 @@ SPACE_TRANSITIONS = {
 	CREDITS: MAIN_MENU,
 	INTRODUCTION: 2,
 	MAIN_MENU: INTRODUCTION,
+	VICTORY: MAIN_MENU,
+}
+
+NEXT_LEVEL = {
+	2: 3,
+	3: 4,
+	4: 5,
+	5: VICTORY,
 }
 
 
@@ -187,6 +195,8 @@ class Game(arcade.Window):
 
 	DEFEAT_BOY = DEFEAT_BOY
 	DEFEAT_GIRL = DEFEAT_GIRL
+
+	NEXT_LEVEL = NEXT_LEVEL
 
 
 	TILE_SIZE = 20*GLOBAL_SCALE
@@ -1058,7 +1068,7 @@ class Game(arcade.Window):
 			[self.controlled.x + SCREEN_WIDTH//2, self.controlled.y - SCREEN_HEIGHT//2],
 		]
 
-		for sprite in chain(self.grounds, self.entities, self.walls, self.glasses, self.doors, self.open_doors, self.weapons):
+		for sprite in chain(self.grounds, self.entities, self.walls, self.glasses, self.doors, self.open_doors, self.axes, self.sticks):
 			if arcade.is_point_in_polygon(sprite.center_x, sprite.center_y, screen_poly):
 
 				if self.can_see_sprite(x, y, sprite):
@@ -1071,7 +1081,7 @@ class Game(arcade.Window):
 		return [self.brother, self.sister][self.controlled is self.engine.sister]
 
 	def new_entity(self, x, y, kind):
-		return engine.MainEntity.new(x=x, y=y, kind=kind)
+		return engine.MainEntity.new(x=x, y=y, kind=kind, game=self)
 
 	def new_solider_animated_sprite(self):
 		return EntitySprite(

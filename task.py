@@ -317,8 +317,8 @@ class GuideTo(Task):
 			self.main_entity.stop_motion_command("GuideTo.is_alive 1")
 			return False
 
-		if abs(self.main_entity.x - self.x) < 5*GLOBAL_SCALE\
-			and abs(self.main_entity.y - self.y) < 5*GLOBAL_SCALE:
+		if abs(self.main_entity.x - self.x) < 12*GLOBAL_SCALE\
+			and abs(self.main_entity.y - self.y) < 12*GLOBAL_SCALE:
 
 			self.main_entity.stop_motion_command("GuideTO.is_alive 2")
 			if self.callback is not None: self.callback()
@@ -440,6 +440,28 @@ class Detection(Task):
 class SoundPlayer(Task):
 
 
-	def __init__(self, p):
+	def __init__(self, p, volume=1, repeat=True):
 
-		pass
+		self.snd = arcade.Sound(p, streaming=True)
+		self.volume = volume
+		self.repeat = repeat
+
+		self.time = 0
+
+		self.play()
+
+	def play(self):
+
+		self.snd.play(self.volume)
+		self.time = 0
+
+	def update(self, dt, game):
+
+		self.time += dt
+
+		if self.time > self.snd.get_length():
+			self.snd.stop()
+			self.play()
+
+	def is_alive(self, game):
+		return True

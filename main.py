@@ -281,6 +281,8 @@ class Game(arcade.Window):
 
 		self.latest_play_level = 2
 
+		self.jukebox = None
+
 	def try_shoot(self, soldier, target):
 
 		if self.xcan_see(soldier, target) and engine.distance(soldier, target) < 100*GLOBAL_SCALE:
@@ -306,9 +308,9 @@ class Game(arcade.Window):
 
 	def rem_task(self, key):
 
-		del self.tasks[key]
-		self.index_pool.destroy(key)
-		del self.task_keys[self.task_keys.index(key)]
+		if key in self.tasks: del self.tasks[key]
+		if key in self.index_pool.indexes: self.index_pool.destroy(key)
+		if key in self.task_keys: del self.task_keys[self.task_keys.index(key)]
 
 	def xcan_see(self, e1, e2):
 		"""
@@ -476,6 +478,13 @@ class Game(arcade.Window):
 	def setup(self, level):
 
 		self.ready = False
+
+		self.index_pool = pathfinder.IndexPool.new()
+		self.task_keys = []
+
+		if self.jukebox is None:
+			self.jukebox = task.SoundPlayer(str(ASSETS_PATH / "main.mp3"), 0.05)
+			self.add_task(self.jukebox)
 
 		self.level = level
 
@@ -701,9 +710,6 @@ class Game(arcade.Window):
 				sprite._set_alpha(INVISIBLE)
 
 		self.pf_tree = pathfinder.Tree.generate(self)
-		self.index_pool = pathfinder.IndexPool.new()
-
-		self.task_keys = []
 
 		self.level_instance = data[1]()
 		self.level_instance.setup(self)
@@ -1014,6 +1020,8 @@ class Game(arcade.Window):
 
 	def on_update(self, delta_time: float):
 
+		self.update_tasks(delta_time)
+
 		if not self.ready: return
 
 		if is_pure_menu(self.level):
@@ -1026,8 +1034,6 @@ class Game(arcade.Window):
 		#self.update_order()
 
 		self.update_checking_keyboard()
-
-		self.update_tasks(delta_time)
 
 		if CLIP:
 

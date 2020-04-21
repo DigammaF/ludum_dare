@@ -265,7 +265,7 @@ class MainEntity:
 
 	def command_take_weapon_off(self):
 
-		self.command_take_weapon = False
+		#self.command_take_weapon = False
 		self.pick_weapon_task = None
 
 	def update_berserk(self, dt, game):

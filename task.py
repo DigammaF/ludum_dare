@@ -317,8 +317,8 @@ class GuideTo(Task):
 			self.main_entity.stop_motion_command("GuideTo.is_alive 1")
 			return False
 
-		if abs(self.main_entity.x - self.x) < 12*GLOBAL_SCALE\
-			and abs(self.main_entity.y - self.y) < 12*GLOBAL_SCALE:
+		if abs(self.main_entity.x - self.x) < 5*GLOBAL_SCALE\
+			and abs(self.main_entity.y - self.y) < 5*GLOBAL_SCALE:
 
 			self.main_entity.stop_motion_command("GuideTO.is_alive 2")
 			if self.callback is not None: self.callback()

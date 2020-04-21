@@ -440,4 +440,6 @@ class Detection(Task):
 class SoundPlayer(Task):
 
 
-	pass
+	def __init__(self, p):
+
+		pass

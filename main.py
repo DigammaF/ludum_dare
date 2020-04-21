@@ -809,11 +809,11 @@ class Game(arcade.Window):
 
 	def on_draw(self):
 
-		if not self.ready: return
-
 		arcade.start_render()
 
 		self.menu.draw()
+
+		if not self.ready: return
 
 		if is_pure_menu(self.level):
 			return
@@ -1128,7 +1128,7 @@ class Game(arcade.Window):
 
 def main():
 	window = Game()
-	window.setup(4)
+	window.setup(MAIN_MENU)
 	arcade.run()
 
 

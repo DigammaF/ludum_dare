@@ -156,6 +156,7 @@ class XGuideTo(Task):
 
 		if not self.route_points:
 			self.quit()
+			self.callback()
 			return
 
 		gogoal = self.route_points[0]

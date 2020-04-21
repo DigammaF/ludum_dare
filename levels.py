@@ -277,7 +277,7 @@ class LevelOne(Level):
 
 	def player_house_exit(self):
 
-		for _ in range(3):
+		for _ in range(4):
 
 			key = self.game.add_entity(
 				self.game.new_entity(
@@ -313,6 +313,7 @@ class LevelOne(Level):
 			entity=entity,
 			x=patrol.center_x,
 			y=patrol.center_y,
+			callback=lambda self=self, entity=entity, game=game: self.take_soldier_on_patrol(entity, game)
 		))
 
 
@@ -352,7 +353,7 @@ class LevelTwo(Level):
 
 	def player_house_exit(self):
 
-		for _ in range(3):
+		for _ in range(5):
 
 			key = self.game.add_entity(
 				self.game.new_entity(
@@ -369,9 +370,9 @@ class LevelTwo(Level):
 			self.entities.append(entity)
 
 			self.game.add_task(task.Hunt(entity))
-			self.take_soldier_on_patrol(entity, self.game)
+			self.take_soldier_on_patrol(entity, self.game, rnd=True)
 
-	def take_soldier_on_patrol(self, entity, game):
+	def take_soldier_on_patrol(self, entity, game, rnd=False):
 
 		m = float("-inf")
 		patrol = None
@@ -382,12 +383,18 @@ class LevelTwo(Level):
 				m = p.last_visit_time
 				patrol = p
 
+		if rnd:
+			patrol = random.choice(self.patrols)
+
 		patrol.last_visit_time = 0
 
 		game.add_task(task.XGuideTo(
 			entity=entity,
 			x=patrol.center_x,
 			y=patrol.center_y,
+			callback=lambda self=self, game=game, entity=entity: game.add_task(task.After(1,
+				lambda self=self, game=game, entity=entity: self.take_soldier_on_patrol(entity, game)
+			))
 		))
 
 
@@ -408,4 +415,4 @@ class LevelFour(Level):
 	def update(self, dt):
 
 		if arcade.check_for_collision(self.exit, self.game.brother):
-			self.game.setup(self.game.NEXT_LEVEL[self.game.level])
+			self.game.setup(self.game.VICTORY)

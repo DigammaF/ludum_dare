@@ -105,6 +105,8 @@ class MainEntity:
 
 		self.panic_task = None
 
+		self.demon_stop = False
+
 	def take_damage(self, d):
 
 		self.health -= d
@@ -272,6 +274,10 @@ class MainEntity:
 
 		if self.demon_time > DEMON_TIME:
 
+			if not self.demon_stop:
+				self.stop_motion_command("update_berserk")
+				self.demon_stop = True
+
 			self.demon_state = 2
 			self.can_be_commanded = False
 
@@ -371,6 +377,8 @@ class MainEntity:
 		self.demon_time = 0
 		self.demon_decay_time = DEMON_DECAY_TIME
 		self.can_be_commanded = True
+
+		self.demon_stop = False
 
 		if self.attack_task is not None:
 			self.attack_task.quit()

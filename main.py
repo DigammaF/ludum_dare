@@ -195,6 +195,7 @@ class Game(arcade.Window):
 
 	DEFEAT_BOY = DEFEAT_BOY
 	DEFEAT_GIRL = DEFEAT_GIRL
+	VICTORY = VICTORY
 
 	NEXT_LEVEL = NEXT_LEVEL
 
@@ -282,7 +283,7 @@ class Game(arcade.Window):
 
 	def try_shoot(self, soldier, target):
 
-		if self.xcan_see(soldier, target):
+		if self.xcan_see(soldier, target) and engine.distance(soldier, target) < 100*GLOBAL_SCALE:
 
 			if soldier.reload > 0:
 				return
@@ -515,6 +516,16 @@ class Game(arcade.Window):
 		if level == INTRODUCTION:
 			self.menu.append(arcade.Sprite(
 				str(ASSETS_PATH / "Ecrans" / "Introduction.png"),
+				center_x=SCREEN_WIDTH // 2,
+				center_y=SCREEN_HEIGHT // 2,
+				scale=0.3,
+			))
+
+			self.ready = True
+
+		if level == VICTORY:
+			self.menu.append(arcade.Sprite(
+				str(ASSETS_PATH / "Ecrans" / "Ecran de victoire.png"),
 				center_x=SCREEN_WIDTH // 2,
 				center_y=SCREEN_HEIGHT // 2,
 				scale=0.3,
@@ -1117,7 +1128,7 @@ class Game(arcade.Window):
 
 def main():
 	window = Game()
-	window.setup(MAIN_MENU)
+	window.setup(4)
 	arcade.run()
 
 

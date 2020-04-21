@@ -128,19 +128,19 @@ def make_use_spatial_hash(sprite_list):
 class Controls:
 
 
-	UP = arcade.key.Z
-	DOWN = arcade.key.S
-	LEFT = arcade.key.Q
-	RIGHT = arcade.key.D
+	UP = arcade.key.UP
+	DOWN = arcade.key.DOWN
+	LEFT = arcade.key.LEFT
+	RIGHT = arcade.key.RIGHT
 
-	SWITCH_CONTROL = arcade.key.A
+	SWITCH_CONTROL = arcade.key.X
 	TAKE_WEAPON = arcade.key.F
 	DOOR = arcade.key.F
 
 	COME_HERE = arcade.key.C
 
 	DEBUG_PRINT_COORD = arcade.key.P
-	DEBUG_NO_CLIP = arcade.key.M
+	DEBUG_NO_CLIP = arcade.key.I
 	DEBUG_CAMERA_DETACH = arcade.key.O
 
 
@@ -1140,7 +1140,7 @@ class Game(arcade.Window):
 
 def main():
 	window = Game()
-	window.setup(DEFEAT_GIRL)
+	window.setup(MAIN_MENU)
 	arcade.run()
 
 

@@ -1,0 +1,1 @@
+pyinstaller --onefile --hidden-import=arcade main.spec --distpath .
